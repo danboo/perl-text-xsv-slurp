@@ -3,8 +3,13 @@ package Text::xSV::Slurp;
 use warnings;
 use strict;
 
+use Exporter;
 use Carp;
 use Text::CSV;
+
+use base 'Exporter';
+
+our @EXPORT = qw/ xsv_slurp /;
 
 =head1 NAME
 
@@ -58,15 +63,7 @@ sub xsv_slurp
       carp "Error: too many sources given (@given_srcs), specify only one.";
       }
       
-   my @all_shapes   = qw/ aoa aoh hoa hoh /;
-   my @given_shapes = grep { defined $o{$_} } @all_shapes;
-   
-   if ( @given_shapes > 1 )
-      {
-      carp "Error: too many shapes given (@given_shapes), specify only one.";
-      }
-
-   my $shape    = @given_shapes ? $given_shapes[0] : 'aoh';
+   my $shape    = defined $o{'shape'} ? $o{'shape'} : 'aoh';
    my $src      = $given_srcs[0];
    my $handle   = _get_handle( $src => $o{$src} );
    my %csv_opts = %o;
@@ -80,28 +77,58 @@ sub xsv_slurp
                 'hoa' => \&_as_hoa,
                 'hoh' => \&_as_hoh, } -> { $shape }
                                       -> ( $handle, $csv, \%o );
+                                      
    
    return $data;
    }
    
 sub _as_aoa
    {
-   my ( $handle, $csv ) = @_;
+   my ( $handle, $csv, $o ) = @_;
+   
+   my $aoa = [];
+   
+   while ( my $line = <$handle> )
+      {
+      chomp $line;
+      
+      if ( ! $csv->parse($line) )
+         {
+         carp 'Error: ' . $csv->error_diag;
+         }
+         
+      push @{ $aoa }, [ $csv->fields ];
+      
+      }
+   
+   return $aoa;
    }   
    
 sub _as_aoh
    {
-   my ( $handle, $csv ) = @_;
+   my ( $handle, $csv, $o ) = @_;
+
+   my $aoh = [];
+   
+   return $aoh;
    }   
 
 sub _as_hoa
    {
-   my ( $handle, $csv ) = @_;
+   my ( $handle, $csv, $o ) = @_;
+
+   my $hoa = [];
+   
+   return $hoa;
    }   
 
 sub _as_hoh
    {
-   my ( $handle, $csv ) = @_;
+   my ( $handle, $csv, $o ) = @_;
+
+   my $hoh = [];
+   
+   return $hoh;
    }   
 
 sub _get_handle
