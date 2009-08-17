@@ -72,12 +72,17 @@ sub xsv_slurp
    
    my $csv = Text::CSV->new( \%csv_opts );
    
-   my $data = { 'aoa' => \&_as_aoa,
-                'aoh' => \&_as_aoh,
-                'hoa' => \&_as_hoa,
-                'hoh' => \&_as_hoh, } -> { $shape }
-                                      -> ( $handle, $csv, \%o );
-                                      
+   my $shape_map =
+      {
+      'aoa' => \&_as_aoa,
+      'aoh' => \&_as_aoh,
+      'hoa' => \&_as_hoa,
+      'hoh' => \&_as_hoh,
+      };
+
+   my $shaper = $shape_map->{ $shape };
+
+   my $data   = $shaper->( $handle, $csv, \%o );
    
    return $data;
    }
