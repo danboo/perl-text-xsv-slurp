@@ -3,6 +3,9 @@ package Text::xSV::Slurp;
 use warnings;
 use strict;
 
+use Carp;
+use Text::CSV;
+
 =head1 NAME
 
 Text::xSV::Slurp - Slurp xSV data into common data shapes.
@@ -22,17 +25,12 @@ Quick summary of what the module does.
 
 Perhaps a little code snippet.
 
-    use Text::xSV::Slurp;
-
-    my $xsv_slurp = Text::xSV::Slurp->new( separator => ',' );
-       
-    my $aoa = $xsv_slurp->aoa( file   => 'foo.csv' );
-    my $aoh = $xsv_slurp->aoh( handle => \*FOO_CSV_FH );
-    my $hoa = $xsv_slurp->hoa( data   => $foo_csv_data );
-    my $hoh = $xsv_slurp->hoh( file   => 'foo.csv',
-                               index  => 'id' );
-                           
-
+    use Text::xSV::Slurp 'xsv_slurp';
+    
+    xsv_slurp( file => 'foo.csv',
+              shape => 'hoh',
+              index => 'id',
+          
 =head1 EXPORT
 
 A list of functions that can be exported.  You can delete this section
@@ -40,19 +38,95 @@ if you don't export anything, such as for a purely object-oriented module.
 
 =head1 FUNCTIONS
 
-=head2 function1
+=head2 xsv_slurp
 
 =cut
 
-sub function1 {
-}
+sub xsv_slurp
+   {
+   my %o = @_;
+   
+   my @all_srcs   = qw/ file handle string /;
+   my @given_srcs = grep { defined $o{$_} } @all_srcs;
+   
+   if ( ! @given_srcs )
+      {
+      carp "Error: no source given, specify one of: @all_srcs.";
+      }
+   elsif ( @given_srcs > 1 )
+      {
+      carp "Error: too many sources given (@given_srcs), specify only one.";
+      }
+      
+   my @all_shapes   = qw/ aoa aoh hoa hoh /;
+   my @given_shapes = grep { defined $o{$_} } @all_shapes;
+   
+   if ( @given_shapes > 1 )
+      {
+      carp "Error: too many shapes given (@given_shapes), specify only one.";
+      }
 
-=head2 function2
+   my $shape    = @given_shapes ? $given_shapes[0] : 'aoh';
+   my $src      = $given_srcs[0];
+   my $handle   = _get_handle( $src => $o{$src} );
+   my %csv_opts = %o;
+   
+   delete $csv_opts{$_} for qw/ file handle string shape index /;
+   
+   my $csv = Text::CSV->new( \%csv_opts );
+   
+   my $data = { 'aoa' => \&_as_aoa,
+                'aoh' => \&_as_aoh,
+                'hoa' => \&_as_hoa,
+                'hoh' => \&_as_hoh, } -> { $shape }
+                                      -> ( $handle, $csv, \%o );
+   
+   return $data;
+   }
+   
+sub _as_aoa
+   {
+   my ( $handle, $csv ) = @_;
+   }   
+   
+sub _as_aoh
+   {
+   my ( $handle, $csv ) = @_;
+   }   
 
-=cut
+sub _as_hoa
+   {
+   my ( $handle, $csv ) = @_;
+   }   
 
-sub function2 {
-}
+sub _as_hoh
+   {
+   my ( $handle, $csv ) = @_;
+   }   
+
+sub _get_handle
+   {
+   my ( $src_type, $src_value ) = @_;
+   
+   if ( $src_type eq 'handle' )
+      {
+      return $src_value;
+      }
+      
+   if ( $src_type eq 'string' )
+      {
+      open( my $handle, '<', \$src_value ) || carp "Error opening string handle: $!";
+      return $handle;
+      }
+   
+   if ( $src_type eq 'file' )
+      {
+      open( my $handle, '<', $src_value ) || carp "Error opening $src_value: $!";
+      return $handle;
+      }
+   
+   carp "Error: could not determine source type";
+   }   
 
 =head1 AUTHOR
 
