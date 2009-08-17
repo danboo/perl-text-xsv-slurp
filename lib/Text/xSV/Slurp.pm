@@ -3,8 +3,8 @@ package Text::xSV::Slurp;
 use warnings;
 use strict;
 
-use Exporter;
 use Carp;
+use Exporter;
 use Text::CSV;
 
 use base 'Exporter';
