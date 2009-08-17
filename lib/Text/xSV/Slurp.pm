@@ -86,7 +86,7 @@ sub _as_aoa
    {
    my ( $handle, $csv, $o ) = @_;
    
-   my $aoa = [];
+   my @aoa;
    
    while ( my $line = <$handle> )
       {
@@ -97,38 +97,38 @@ sub _as_aoa
          carp 'Error: ' . $csv->error_diag;
          }
          
-      push @{ $aoa }, [ $csv->fields ];
+      push @aoa, [ $csv->fields ];
       
       }
    
-   return $aoa;
+   return \@aoa;
    }   
    
 sub _as_aoh
    {
    my ( $handle, $csv, $o ) = @_;
 
-   my $aoh = [];
+   my @aoh;
    
-   return $aoh;
+   return \@aoh;
    }   
 
 sub _as_hoa
    {
    my ( $handle, $csv, $o ) = @_;
 
-   my $hoa = [];
+   my %hoa;
    
-   return $hoa;
+   return \%hoa;
    }   
 
 sub _as_hoh
    {
    my ( $handle, $csv, $o ) = @_;
 
-   my $hoh = [];
+   my %hoh;
    
-   return $hoh;
+   return \%hoh;
    }   
 
 sub _get_handle
