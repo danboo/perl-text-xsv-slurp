@@ -3,7 +3,7 @@ package Text::xSV::Slurp;
 use warnings;
 use strict;
 
-use Carp;
+use Carp 'confess';
 use Exporter;
 use Text::CSV;
 
@@ -47,6 +47,14 @@ if you don't export anything, such as for a purely object-oriented module.
 
 =cut
 
+my %shape_map =
+   (
+   'aoa' => \&_as_aoa,
+   'aoh' => \&_as_aoh,
+   'hoa' => \&_as_hoa,
+   'hoh' => \&_as_hoh,
+   );
+
 sub xsv_slurp
    {
    my %o = @_;
@@ -56,33 +64,38 @@ sub xsv_slurp
    
    if ( ! @given_srcs )
       {
-      carp "Error: no source given, specify one of: @all_srcs.";
+      confess "Error: no source given, specify one of: @all_srcs.";
       }
    elsif ( @given_srcs > 1 )
       {
-      carp "Error: too many sources given (@given_srcs), specify only one.";
+      confess "Error: too many sources given (@given_srcs), specify only one.";
       }
       
-   my $shape    = defined $o{'shape'} ? $o{'shape'} : 'aoh';
+   my %shape_map =
+      (
+      'aoa' => \&_as_aoa,
+      'aoh' => \&_as_aoh,
+      'hoa' => \&_as_hoa,
+      'hoh' => \&_as_hoh,
+      );
+
+   my $shape  = defined $o{'shape'} ? lc $o{'shape'} : 'aoh';
+   my $shaper = $shape_map{ $shape };
+   
+   if ( ! $shaper )
+      {
+      my @all_shapes = keys %shape_map;
+      confess "Error: unrecognized shape given ($shape). Must be one of: @all_shapes"
+      }
+   
    my $src      = $given_srcs[0];
    my $handle   = _get_handle( $src => $o{$src} );
    my %csv_opts = %o;
    
    delete $csv_opts{$_} for qw/ file handle string shape index /;
    
-   my $csv = Text::CSV->new( \%csv_opts );
-   
-   my $shape_map =
-      {
-      'aoa' => \&_as_aoa,
-      'aoh' => \&_as_aoh,
-      'hoa' => \&_as_hoa,
-      'hoh' => \&_as_hoh,
-      };
-
-   my $shaper = $shape_map->{ $shape };
-
-   my $data   = $shaper->( $handle, $csv, \%o );
+   my $csv  = Text::CSV->new( \%csv_opts );
+   my $data = $shaper->( $handle, $csv, \%o );
    
    return $data;
    }
@@ -99,7 +112,7 @@ sub _as_aoa
       
       if ( ! $csv->parse($line) )
          {
-         carp 'Error: ' . $csv->error_diag;
+         confess 'Error: ' . $csv->error_diag;
          }
          
       push @aoa, [ $csv->fields ];
@@ -114,6 +127,33 @@ sub _as_aoh
    my ( $handle, $csv, $o ) = @_;
 
    my @aoh;
+   
+   chomp( my $header = <$handle> );
+   
+   if ( ! $csv->parse($header) )
+      {
+      confess 'Error: ' . $csv->error_diag;
+      }
+      
+   my @headers = $csv->fields;
+   
+   while ( my $line = <$handle> )
+      {
+      chomp $line;
+      
+      if ( ! $csv->parse($line) )
+         {
+         confess 'Error: ' . $csv->error_diag;
+         }
+         
+      my %line;
+      
+      @line{ @headers } = $csv->fields;
+         
+      push @aoh, \%line;
+      
+      }
+  
    
    return \@aoh;
    }   
@@ -147,17 +187,17 @@ sub _get_handle
       
    if ( $src_type eq 'string' )
       {
-      open( my $handle, '<', \$src_value ) || carp "Error opening string handle: $!";
+      open( my $handle, '<', \$src_value ) || confess "Error opening string handle: $!";
       return $handle;
       }
    
    if ( $src_type eq 'file' )
       {
-      open( my $handle, '<', $src_value ) || carp "Error opening $src_value: $!";
+      open( my $handle, '<', $src_value ) || confess "Error opening $src_value: $!";
       return $handle;
       }
    
-   carp "Error: could not determine source type";
+   confess "Error: could not determine source type";
    }   
 
 =head1 AUTHOR
