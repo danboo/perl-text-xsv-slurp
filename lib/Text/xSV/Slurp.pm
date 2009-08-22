@@ -71,14 +71,6 @@ sub xsv_slurp
       confess "Error: too many sources given (@given_srcs), specify only one.";
       }
       
-   my %shape_map =
-      (
-      'aoa' => \&_as_aoa,
-      'aoh' => \&_as_aoh,
-      'hoa' => \&_as_hoa,
-      'hoh' => \&_as_hoh,
-      );
-
    my $shape  = defined $o{'shape'} ? lc $o{'shape'} : 'aoh';
    my $shaper = $shape_map{ $shape };
    
