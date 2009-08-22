@@ -128,33 +128,39 @@ sub _as_aoh
 
    my @aoh;
    
-   chomp( my $header = <$handle> );
-   
-   if ( ! $csv->parse($header) )
+   my $header = <$handle>;
+
+   if ( defined $header )
       {
-      confess 'Error: ' . $csv->error_diag;
-      }
-      
-   my @headers = $csv->fields;
    
-   while ( my $line = <$handle> )
-      {
-      chomp $line;
-      
-      if ( ! $csv->parse($line) )
+      chomp( $header );
+   
+      if ( ! $csv->parse($header) )
          {
          confess 'Error: ' . $csv->error_diag;
          }
          
-      my %line;
+      my @headers = $csv->fields;
       
-      @line{ @headers } = $csv->fields;
+      while ( my $line = <$handle> )
+         {
+         chomp $line;
          
-      push @aoh, \%line;
-      
+         if ( ! $csv->parse($line) )
+            {
+            confess 'Error: ' . $csv->error_diag;
+            }
+            
+         my %line;
+         
+         @line{ @headers } = $csv->fields;
+            
+         push @aoh, \%line;
+         
+         }
+         
       }
-  
-   
+
    return \@aoh;
    }   
 
@@ -164,33 +170,40 @@ sub _as_hoa
 
    my %hoa;
    
-   chomp( my $header = <$handle> );
-   
-   if ( ! $csv->parse($header) )
+   my $header = <$handle>;
+
+   if ( defined $header )
       {
-      confess 'Error: ' . $csv->error_diag;
-      }
-      
-   my @headers = $csv->fields;
    
-   @hoa{ @headers } = map { [] } @headers;
-   
-   while ( my $line = <$handle> )
-      {
-      chomp $line;
-      
-      if ( ! $csv->parse($line) )
+      chomp( $header );
+
+      if ( ! $csv->parse($header) )
          {
          confess 'Error: ' . $csv->error_diag;
          }
          
-      my %line;
+      my @headers = $csv->fields;
       
-      @line{ @headers } = $csv->fields;
-
-      for my $k ( @headers )
+      @hoa{ @headers } = map { [] } @headers;
+      
+      while ( my $line = <$handle> )
          {
-         push @{ $hoa{$k} }, $line{$k};
+         chomp $line;
+         
+         if ( ! $csv->parse($line) )
+            {
+            confess 'Error: ' . $csv->error_diag;
+            }
+            
+         my %line;
+         
+         @line{ @headers } = $csv->fields;
+
+         for my $k ( @headers )
+            {
+            push @{ $hoa{$k} }, $line{$k};
+            }
+            
          }
          
       }
@@ -204,51 +217,58 @@ sub _as_hoh
 
    my %hoh;
    
-   chomp( my $header = <$handle> );
-   
-   if ( ! $csv->parse($header) )
-      {
-      confess 'Error: ' . $csv->error_diag;
-      }
-      
-   my @headers = $csv->fields;
-   
-   if ( ! $csv->parse( $o->{'key'} ) )
-      {
-      confess 'Error: ' . $csv->error_diag;
-      }
-      
-   my @key = $csv->fields;
+   my $header = <$handle>;
 
-   while ( my $line = <$handle> )
+   if ( defined $header )
       {
-      chomp $line;
-      
-      if ( ! $csv->parse($line) )
+   
+      chomp( $header );
+
+      if ( ! $csv->parse($header) )
          {
          confess 'Error: ' . $csv->error_diag;
          }
          
-      my %line;
+      my @headers = $csv->fields;
       
-      @line{ @headers } = $csv->fields;
-      
-      my $leaf = \%hoh;
-      
-      for my $k ( @key )
+      if ( ! $csv->parse( $o->{'key'} ) )
          {
-         
-         my $v         = $line{$k};
-         $leaf->{$k} ||= {};
-         $leaf         = $leaf->{$k};
-         
+         confess 'Error: ' . $csv->error_diag;
          }
          
-      delete @line{ @key };
-      
-      %{ $leaf } = %line;
+      my @key = $csv->fields;
+
+      while ( my $line = <$handle> )
+         {
+         chomp $line;
          
-      }
+         if ( ! $csv->parse($line) )
+            {
+            confess 'Error: ' . $csv->error_diag;
+            }
+            
+         my %line;
+         
+         @line{ @headers } = $csv->fields;
+         
+         my $leaf = \%hoh;
+         
+         for my $k ( @key )
+            {
+            
+            my $v         = $line{$k};
+            $leaf->{$v} ||= {};
+            $leaf         = $leaf->{$v};
+            
+            }
+            
+         delete @line{ @key };
+         
+         %{ $leaf } = %line;
+            
+         }
+         
+     }
 
    return \%hoh;
    }   
