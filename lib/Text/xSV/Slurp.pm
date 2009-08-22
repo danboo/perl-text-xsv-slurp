@@ -34,7 +34,7 @@ Perhaps a little code snippet.
     
     xsv_slurp( file => 'foo.csv',
               shape => 'hoh',
-              index => 'id',
+                key => 'id', );
           
 =head1 EXPORT
 
@@ -223,12 +223,25 @@ sub _as_hoh
          
       my @headers = $csv->fields;
       
-      if ( ! $csv->parse( $o->{'key'} ) )
+      my @key;
+      
+      if ( ref $o->{'key'} )
          {
-         confess 'Error: ' . $csv->error_diag;
+         
+         @key = @{ $o->{'key'} };
+         
+         }
+      else
+         {
+      
+         if ( ! $csv->parse( $o->{'key'} ) )
+            {
+            confess 'Error: ' . $csv->error_diag;
+            }
+            
          }
          
-      my @key = $csv->fields;
+      @key = $csv->fields;
 
       while ( my $line = <$handle> )
          {
