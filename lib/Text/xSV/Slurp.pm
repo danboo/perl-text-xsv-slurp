@@ -92,7 +92,7 @@ sub xsv_slurp
    my $handle   = _get_handle( $src => $o{$src} );
    my %csv_opts = %o;
    
-   delete $csv_opts{$_} for qw/ file handle string shape index /;
+   delete $csv_opts{$_} for qw/ file handle string shape key /;
    
    my $csv  = Text::CSV->new( \%csv_opts );
    my $data = $shaper->( $handle, $csv, \%o );
@@ -164,6 +164,37 @@ sub _as_hoa
 
    my %hoa;
    
+   chomp( my $header = <$handle> );
+   
+   if ( ! $csv->parse($header) )
+      {
+      confess 'Error: ' . $csv->error_diag;
+      }
+      
+   my @headers = $csv->fields;
+   
+   @hoa{ @headers } = map { [] } @headers;
+   
+   while ( my $line = <$handle> )
+      {
+      chomp $line;
+      
+      if ( ! $csv->parse($line) )
+         {
+         confess 'Error: ' . $csv->error_diag;
+         }
+         
+      my %line;
+      
+      @line{ @headers } = $csv->fields;
+
+      for my $k ( @headers )
+         {
+         push @{ $hoa{$k} }, $line{$k};
+         }
+         
+      }
+
    return \%hoa;
    }   
 
@@ -173,6 +204,52 @@ sub _as_hoh
 
    my %hoh;
    
+   chomp( my $header = <$handle> );
+   
+   if ( ! $csv->parse($header) )
+      {
+      confess 'Error: ' . $csv->error_diag;
+      }
+      
+   my @headers = $csv->fields;
+   
+   if ( ! $csv->parse( $o->{'key'} ) )
+      {
+      confess 'Error: ' . $csv->error_diag;
+      }
+      
+   my @key = $csv->fields;
+
+   while ( my $line = <$handle> )
+      {
+      chomp $line;
+      
+      if ( ! $csv->parse($line) )
+         {
+         confess 'Error: ' . $csv->error_diag;
+         }
+         
+      my %line;
+      
+      @line{ @headers } = $csv->fields;
+      
+      my $leaf = \%hoh;
+      
+      for my $k ( @key )
+         {
+         
+         my $v         = $line{$k};
+         $leaf->{$k} ||= {};
+         $leaf         = $leaf->{$k};
+         
+         }
+         
+      delete @line{ @key };
+      
+      %{ $leaf } = %line;
+         
+      }
+
    return \%hoh;
    }   
 
