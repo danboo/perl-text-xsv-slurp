@@ -287,6 +287,13 @@ sub _as_hoh
          
       my @headers = $csv->fields;
       
+      my @grep_headers;
+      
+      if ( defined $o->{'col_grep'} )
+         {
+         @grep_headers = $o->{'col_grep'}->( @headers );
+         }
+
       my @key;
       
       if ( ref $o->{'key'} )
@@ -303,10 +310,10 @@ sub _as_hoh
             confess 'Error: ' . $csv->error_diag;
             }
             
+         @key = $csv->fields;
+
          }
          
-      @key = $csv->fields;
-
       while ( my $line = <$handle> )
          {
          chomp $line;
@@ -332,6 +339,11 @@ sub _as_hoh
             }
             
          delete @line{ @key };
+         
+         if ( defined $o->{'col_grep'} )
+            {
+            %line = map { $_ => $line{$_} } @grep_headers;
+            }
          
          %{ $leaf } = %line;
             
