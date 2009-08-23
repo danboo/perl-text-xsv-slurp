@@ -1,7 +1,7 @@
 use warnings;
 use strict;
 
-use Test::More tests => 2;
+use Test::More tests => 4;
 
 use Text::xSV::Slurp;
 
@@ -49,6 +49,55 @@ EOIN
       {
       shape    => 'aoh',
       col_grep => sub { grep { /[ac]/ } @_ },
+      },
+
+   },
+
+   {
+   
+   id => 'hoa',
+
+   in => <<EOIN,
+a,b,c
+1,2,3
+4,5,6
+EOIN
+
+   exp => 
+      {
+      b => [ 2, 5 ],
+      c => [ 3, 6 ],
+      },
+      
+   opts =>
+      {
+      shape    => 'hoa',
+      col_grep => sub { grep { /[bc]/ } @_ },
+      },
+
+   },
+
+   {
+   
+   id => 'hoh',
+
+   in => <<EOIN,
+a,b,c,d
+1,2,3,7
+4,5,6,8
+EOIN
+
+   exp => 
+      {
+      2 => { 3 => { d => 7 } },
+      5 => { 6 => { d => 8 } },
+      },
+      
+   opts =>
+      {
+      shape    => 'hoh',
+      col_grep => sub { grep { /d/ } @_ },
+      key      => 'b,c',
       },
 
    },
