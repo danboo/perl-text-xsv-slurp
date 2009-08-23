@@ -35,8 +35,8 @@ Perhaps a little code snippet.
     my $hoh = xsv_slurp( file => 'foo.csv',
                         shape => 'hoh',
                           key => 'col1',
-                    grep_cols => ['col2', 'col4'],
-                    grep_rows => \&my_filter,
+                     col_grep => ['col2', 'col4'],
+                     row_grep => \&my_filter,
                        );
              
     xsv_eruct( hoh => $hoh,
@@ -99,8 +99,8 @@ sub xsv_slurp
       string
       shape
       key
-      only_cols
-      row_filter
+      col_grep
+      row_grep
       / };
    
    my $csv  = Text::CSV->new( \%csv_opts );
@@ -114,6 +114,9 @@ sub _as_aoa
    my ( $handle, $csv, $o ) = @_;
    
    my @aoa;
+
+   my @cols;
+   my $col_grep;
    
    while ( my $line = <$handle> )
       {
@@ -125,7 +128,22 @@ sub _as_aoa
          }
          
       my @line = $csv->fields;
-         
+
+      if ( defined $o->{'col_grep'} )
+         {
+         if ( ! $col_grep )
+            {
+            $col_grep++;
+            @cols = $o->{'col_grep'}->( 0 .. $#line );
+            }
+         @line = @line[@cols];
+         }
+
+      if ( defined $o->{'row_grep'} )
+         {
+         next if ! $o->{'row_grep'}->( @line );
+         }
+
       push @aoa, \@line;
       
       }
@@ -152,6 +170,13 @@ sub _as_aoh
          }
          
       my @headers = $csv->fields;
+
+      my @grep_headers;
+      
+      if ( defined $o->{'col_grep'} )
+         {
+         @grep_headers = $o->{'col_grep'}->( @headers );
+         }
       
       while ( my $line = <$handle> )
          {
@@ -165,6 +190,11 @@ sub _as_aoh
          my %line;
          
          @line{ @headers } = $csv->fields;
+
+         if ( defined $o->{'col_grep'} )
+            {
+            %line = map { $_ => $line{$_} } @grep_headers;
+            }
             
          push @aoh, \%line;
          
