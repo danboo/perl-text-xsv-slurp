@@ -32,9 +32,20 @@ Perhaps a little code snippet.
 
     use Text::xSV::Slurp 'xsv_slurp';
     
-    xsv_slurp( file => 'foo.csv',
-              shape => 'hoh',
-                key => 'id', );
+    my $hoh = xsv_slurp( file => 'foo.csv',
+                        shape => 'hoh',
+                          key => 'col1',
+                 include_cols => ['col2', 'col4'],
+                 include_rows => { 'col2' => qr/match/ },
+                       );
+             
+    xsv_eruct( file => 'bar.csv',
+                hoh => $hoh,
+                key => 'col1',
+       include_cols => ['col2', 'col4'],
+       include_rows => { 'col2' => qr/match/ },
+             );
+                
           
 =head1 EXPORT
 
