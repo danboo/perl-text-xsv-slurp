@@ -35,15 +35,13 @@ Perhaps a little code snippet.
     my $hoh = xsv_slurp( file => 'foo.csv',
                         shape => 'hoh',
                           key => 'col1',
-                 include_cols => ['col2', 'col4'],
-                 include_rows => { 'col2' => qr/match/ },
+                    only_cols => ['col2', 'col4'],
+                   row_filter => \&my_filter,
                        );
              
-    xsv_eruct( file => 'bar.csv',
-                hoh => $hoh,
-                key => 'col1',
-       include_cols => ['col2', 'col4'],
-       include_rows => { 'col2' => qr/match/ },
+    xsv_eruct( hoh => $hoh,
+              file => 'bar.csv',
+               key => 'col1',
              );
                 
           
@@ -95,7 +93,15 @@ sub xsv_slurp
    my $handle   = _get_handle( $src => $o{$src} );
    my %csv_opts = %o;
    
-   delete $csv_opts{$_} for qw/ file handle string shape key /;
+   delete @csv_opts{ qw/
+      file
+      handle
+      string
+      shape
+      key
+      only_cols
+      row_filter
+      / };
    
    my $csv  = Text::CSV->new( \%csv_opts );
    my $data = $shaper->( $handle, $csv, \%o );
@@ -118,7 +124,9 @@ sub _as_aoa
          confess 'Error: ' . $csv->error_diag;
          }
          
-      push @aoa, [ $csv->fields ];
+      my @line = $csv->fields;
+         
+      push @aoa, \@line;
       
       }
    
