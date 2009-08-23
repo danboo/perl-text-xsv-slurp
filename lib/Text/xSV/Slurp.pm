@@ -225,7 +225,17 @@ sub _as_hoa
          
       my @headers = $csv->fields;
       
-      @hoa{ @headers } = map { [] } @headers;
+      my @grep_headers;
+      
+      if ( defined $o->{'col_grep'} )
+         {
+         @grep_headers = $o->{'col_grep'}->( @headers );
+         @hoa{ @grep_headers } = map { [] } @grep_headers;
+         }
+      else
+         {
+         @hoa{ @headers } = map { [] } @headers;
+         }
       
       while ( my $line = <$handle> )
          {
@@ -240,7 +250,12 @@ sub _as_hoa
          
          @line{ @headers } = $csv->fields;
 
-         for my $k ( @headers )
+         if ( defined $o->{'col_grep'} )
+            {
+            %line = map { $_ => $line{$_} } @grep_headers;
+            }
+
+         for my $k ( keys %line )
             {
             push @{ $hoa{$k} }, $line{$k};
             }
