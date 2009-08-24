@@ -35,8 +35,8 @@ Perhaps a little code snippet.
     my $hoh = xsv_slurp( file => 'foo.csv',
                         shape => 'hoh',
                           key => 'col1',
-                     col_grep => ['col2', 'col4'],
-                     row_grep => \&my_filter,
+                     col_grep => \&my_col_grep,
+                     row_grep => \&my_row_grep,
                        );
              
     xsv_eruct( hoh => $hoh,
