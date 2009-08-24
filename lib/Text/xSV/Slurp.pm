@@ -129,6 +129,11 @@ sub _as_aoa
          
       my @line = $csv->fields;
 
+      if ( defined $o->{'row_grep'} )
+         {
+         next if ! $o->{'row_grep'}->( \@line );
+         }
+         
       if ( defined $o->{'col_grep'} )
          {
          if ( ! $col_grep )
@@ -137,11 +142,6 @@ sub _as_aoa
             @cols = $o->{'col_grep'}->( 0 .. $#line );
             }
          @line = @line[@cols];
-         }
-
-      if ( defined $o->{'row_grep'} )
-         {
-         next if ! $o->{'row_grep'}->( @line );
          }
 
       push @aoa, \@line;
@@ -190,6 +190,11 @@ sub _as_aoh
          my %line;
          
          @line{ @headers } = $csv->fields;
+
+         if ( defined $o->{'row_grep'} )
+            {
+            next if ! $o->{'row_grep'}->( \%line );
+            }
 
          if ( defined $o->{'col_grep'} )
             {
@@ -249,6 +254,11 @@ sub _as_hoa
          my %line;
          
          @line{ @headers } = $csv->fields;
+
+         if ( defined $o->{'row_grep'} )
+            {
+            next if ! $o->{'row_grep'}->( \%line );
+            }
 
          if ( defined $o->{'col_grep'} )
             {
@@ -327,6 +337,11 @@ sub _as_hoh
          
          @line{ @headers } = $csv->fields;
          
+         if ( defined $o->{'row_grep'} )
+            {
+            next if ! $o->{'row_grep'}->( \%line );
+            }
+
          my $leaf = \%hoh;
          
          for my $k ( @key )
