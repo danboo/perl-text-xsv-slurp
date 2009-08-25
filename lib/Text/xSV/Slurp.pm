@@ -54,6 +54,102 @@ if you don't export anything, such as for a purely object-oriented module.
 
 =head2 xsv_slurp
 
+Convert xSV data to common data shapes, using row and column filters. Examples
+below assume the following data:
+
+   h1,h2,h3
+   l,m,n
+   p,q,r
+
+Shape-neutral options:
+
+=over 3
+
+=item C<shape>: specify the shape as C<aoa>, C<aoh>, C<hoa> or C<hoh>
+
+=item C<file>: a file path from which to slurp (exclusive of C<handle> and C<string> options)
+
+=item C<handle>: a file handle from which to slurp (exclusive of C<file> and C<string> options)
+
+=item C<string>: a string from which to slurp (exclusive of C<file> and C<handle> options)
+
+=back
+
+=head3 aoa
+
+Relevant options:
+
+=over 3
+
+=item col_grep: passed an ARRAY reference of indexes, should return a list of
+                indexes to be included
+
+=back
+
+   row_grep: passed an ARRAY reference of values, should return true or false
+             whether the row should be included or not
+
+Sample conversion:
+
+   [
+      [ qw/ h1 h2 h3 / ],
+      [ qw/ l  m  n  / ],
+      [ qw/ p  q  r  / ],
+   ]
+
+=head3 aoh
+
+Relevant options:
+
+   col_grep: passed an ARRAY reference of column names, should return a list
+             of column names to be included
+   row_grep: passed a HASH reference of column name / value pairs, should
+             return true or false whether the row should be included or not
+
+Sample conversion:
+
+   [
+      { h1 => 'l', h2 => 'm', h3 => 'n' },
+      { h1 => 'p', h2 => 'q', h3 => 'r' },
+   ]
+
+=head3 hoa
+
+Relevant options:
+
+   col_grep: passed an ARRAY reference of column names, should return a list
+             of column names to be included
+
+   row_grep: passed a HASH reference of column name / value pairs, should
+             return true or false whether the row should be included or not
+
+Sample conversion:
+
+   {
+      h1 => [ qw/ l p / ],
+      h2 => [ qw/ m q / ],
+      h3 => [ qw/ n r / ],
+   }
+
+=head3 hoh
+
+Relevant options:
+
+   key: an xSV-separated string specifying the indexing columns
+
+   col_grep: passed an ARRAY reference of column names, should return a list
+             of column names to be included
+
+   row_grep: passed a HASH reference of column name / value pairs, should
+             return true or false whether the row should be included or not
+
+Sample conversion (assuming a C<key> of C<'h2,h3'>):
+
+   {
+   m => { n => { h1 => 'l' } },
+   q => { r => { h1 => 'p' } },
+   }
+
 =cut
 
 my %shape_map =
