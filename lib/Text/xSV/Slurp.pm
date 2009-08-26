@@ -9,11 +9,11 @@ use Text::CSV;
 
 use base 'Exporter';
 
-our @EXPORT = qw/ xsv_slurp /;
+our @EXPORT_OK = qw/ xsv_slurp /;
 
 =head1 NAME
 
-Text::xSV::Slurp - Slurp xSV data into common data shapes.
+Text::xSV::Slurp - Convert xSV data to and from common data shapes.
 
 =head1 VERSION
 
@@ -23,36 +23,54 @@ Version 0.01
 
 our $VERSION = '0.01';
 
-
 =head1 SYNOPSIS
 
-Quick summary of what the module does.
+C<Text::xSV::Slurp> converts between xSV data and a variety of nested data
+shapes, allowing both column and row filtering using user defined functions.
 
-Perhaps a little code snippet.
+This brief example creates an array of hashes from a file, where each array
+record corresponds to a line of the file, and each line is represented as a hash
+of header-to-value pairs.
 
     use Text::xSV::Slurp 'xsv_slurp';
     
-    my $hoh = xsv_slurp( file => 'foo.csv',
-                        shape => 'hoh',
-                          key => 'col1',
-                     col_grep => \&my_col_grep,
-                     row_grep => \&my_row_grep,
-                       );
+    my $aoh = xsv_slurp( file => 'foo.csv' );
+    
+    ## if foo.csv contains:
+    ##
+    ## head1,head2
+    ## potato1,potato2
+    ## monkey1,monkey2
+    ##
+    ## then $aoh contains:
+    ##
+    ## [
+    ##   { head1 => 'potato1', head2 => 'potato2' },
+    ##   { head1 => 'monkey1', head2 => 'monkey2' },
+    ## ]
              
-    xsv_eruct( hoh => $hoh,
-              file => 'bar.csv',
-               key => 'col1',
-             );
-                
-          
-=head1 EXPORT
-
-A list of functions that can be exported.  You can delete this section
-if you don't export anything, such as for a purely object-oriented module.
-
 =head1 FUNCTIONS
 
-=head2 xsv_slurp
+=head2 C<xsv_slurp()>
+
+C<xsv_slurp()> converts an xSV data source to one of a variety of nested data
+shapes. It allows both column and row filtering using user defined functions.
+
+The type of xSV data source can be specified using any one of the following
+keys. The paired value specifies the source location or contents.
+
+=over
+
+=item * C<file> - file name to be opened
+
+=item * C<handle> - file handle to be iterated
+
+=item * C<string> - string to be parsed
+
+=back
+
+The caller can specify the source as a C<file> name, a file C<handle> or
+C<string>.
 
 Convert xSV data to common data shapes, using row and column filters. Examples
 below assume the following data:
@@ -63,15 +81,15 @@ below assume the following data:
 
 Shape-neutral options:
 
-=over 3
+=over
 
-=item C<shape>: specify the shape as C<aoa>, C<aoh>, C<hoa> or C<hoh>
+=item * C<shape>: specify the shape as C<aoa>, C<aoh>, C<hoa> or C<hoh>
 
-=item C<file>: a file path from which to slurp (exclusive of C<handle> and C<string> options)
+=item * C<file>: a file path from which to slurp (exclusive of C<handle> and C<string> options)
 
-=item C<handle>: a file handle from which to slurp (exclusive of C<file> and C<string> options)
+=item * C<handle>: a file handle from which to slurp (exclusive of C<file> and C<string> options)
 
-=item C<string>: a string from which to slurp (exclusive of C<file> and C<handle> options)
+=item * C<string>: a string from which to slurp (exclusive of C<file> and C<handle> options)
 
 =back
 
@@ -79,15 +97,15 @@ Shape-neutral options:
 
 Relevant options:
 
-=over 3
+=over
 
-=item col_grep: passed an ARRAY reference of indexes, should return a list of
-                indexes to be included
+=item * C<col_grep>: passed an ARRAY reference of indexes, should return a list of
+                     indexes to be included
+
+=item * C<row_grep>: passed an ARRAY reference of values, should return true or false
+                     whether the row should be included or not
 
 =back
-
-   row_grep: passed an ARRAY reference of values, should return true or false
-             whether the row should be included or not
 
 Sample conversion:
 
@@ -102,7 +120,8 @@ Sample conversion:
 Relevant options:
 
    col_grep: passed an ARRAY reference of column names, should return a list
-             of column names to be included
+             of column names to be included
+
    row_grep: passed a HASH reference of column name / value pairs, should
              return true or false whether the row should be included or not
 
