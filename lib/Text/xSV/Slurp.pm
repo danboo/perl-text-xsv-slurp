@@ -38,16 +38,16 @@ of header-to-value pairs.
     
     ## if foo.csv contains:
     ##
-    ## head1,head2
-    ## potato1,potato2
-    ## monkey1,monkey2
+    ##   head1,head2
+    ##   potato1,potato2
+    ##   monkey1,monkey2
     ##
     ## then $aoh contains:
     ##
-    ## [
-    ##   { head1 => 'potato1', head2 => 'potato2' },
-    ##   { head1 => 'monkey1', head2 => 'monkey2' },
-    ## ]
+    ##   [
+    ##     { head1 => 'potato1', head2 => 'potato2' },
+    ##     { head1 => 'monkey1', head2 => 'monkey2' },
+    ##   ]
              
 =head1 FUNCTIONS
 
@@ -56,8 +56,7 @@ of header-to-value pairs.
 C<xsv_slurp()> converts an xSV data source to one of a variety of nested data
 shapes. It allows both column and row filtering using user defined functions.
 
-The type of xSV data source can be specified using any one of the following
-keys. The paired value specifies the source location or contents.
+Option summary:
 
 =over
 
@@ -67,53 +66,45 @@ keys. The paired value specifies the source location or contents.
 
 =item * C<string> - string to be parsed
 
+=item * C<shape> - data shape conversion target (C<aoa>, C<aoh>, C<hoa> or C<hoh>)
+
+=item * C<col_grep> - skip a subset of columns based on user callback
+
+=item * C<row_grep> - skip a subset of rows based on user callback
+
+=item * C<key> - xSV string used to build the keys used by the C<hoh> shape
+
 =back
 
-The caller can specify the source as a C<file> name, a file C<handle> or
-C<string>.
+The C<file>, C<handle> and C<string> options are mutually exclusive. Only one
+source parameter may be passed in each call to C<xsv_slurp()>, otherwise a fatal
+exception will be raised.
 
-Convert xSV data to common data shapes, using row and column filters. Examples
-below assume the following data:
+The C<shape> parameter supports values of C<aoa>, C<aoh>, C<hoa> or C<hoh>. The default shape is C<aoh>. Each shape affects certain parameters differently. Examples below assume the following data:
 
    h1,h2,h3
    l,m,n
    p,q,r
 
-Shape-neutral options:
-
-=over
-
-=item * C<shape>: specify the shape as C<aoa>, C<aoh>, C<hoa> or C<hoh>
-
-=item * C<file>: a file path from which to slurp (exclusive of C<handle> and C<string> options)
-
-=item * C<handle>: a file handle from which to slurp (exclusive of C<file> and C<string> options)
-
-=item * C<string>: a string from which to slurp (exclusive of C<file> and C<handle> options)
-
-=back
-
 =head3 aoa
 
-Relevant options:
-
-=over
-
-=item * C<col_grep>: passed an ARRAY reference of indexes, should return a list of
-                     indexes to be included
-
-=item * C<row_grep>: passed an ARRAY reference of values, should return true or false
-                     whether the row should be included or not
-
-=back
-
-Sample conversion:
+sample conversion:
 
    [
       [ qw/ h1 h2 h3 / ],
       [ qw/ l  m  n  / ],
       [ qw/ p  q  r  / ],
    ]
+
+parameter specifics:
+
+=over
+
+=item * C<col_grep> -  passed an ARRAY reference of indexes, should return a list of indexes to be included
+
+=item * C<row_grep> - passed an ARRAY reference of values, should return true or false whether the row should be included or not
+
+=back
 
 =head3 aoh
 
