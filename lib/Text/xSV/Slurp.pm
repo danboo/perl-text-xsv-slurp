@@ -82,9 +82,13 @@ exception will be raised.
 
 The C<shape> parameter supports values of C<aoa>, C<aoh>, C<hoa> or C<hoh>. The default shape is C<aoh>. Each shape affects certain parameters differently. Examples below assume the following data:
 
+=over
+
    h1,h2,h3
    l,m,n
    p,q,r
+
+=back
 
 =head3 aoa
 
@@ -108,6 +112,25 @@ shape specifics:
 
 =back
 
+full example:
+
+   ## - convert xSV example to an array of arrays
+   ## - include only rows containing values matching /[nr]/
+   ## - include only the first and last columns 
+
+   my $aoa = xsv_slurp( string   => $xsv_data,
+                        shape    => 'aoa',
+                        col_grep => sub { return @( shift() }[0,-1] },
+                        row_grep => sub { return grep { /[nr]/ } @{ shift() } },
+                      );
+
+   ## $aoa contains:
+   ##
+   ##   [
+   ##      [ 'l',  'n' ],
+   ##      [ 'p',  'r' ],
+   ##   ]
+
 =back
 
 =head3 aoh
@@ -130,6 +153,24 @@ shape specifics:
 =item * C<row_grep> - passed a HASH reference of column name / value pairs, should return true or false whether the row should be included or not
 
 =back
+
+full example:
+
+   ## - convert xSV example to an array of hashes
+   ## - include only rows containing values matching /n/
+   ## - include only the h3 column 
+
+   my $aoh = xsv_slurp( string   => $xsv_data,
+                        shape    => 'aoh',
+                        col_grep => sub { return 'h3' },
+                        row_grep => sub { return grep { /n/ } values %{ shift() } },
+                      );
+
+   ## $aoh contains:
+   ##
+   ##   [
+   ##      { h3 => 'n' },
+   ##   ]
 
 =back
 
@@ -155,6 +196,24 @@ shape specifics:
 
 =back
 
+full example:
+
+   ## - convert xSV example to a hash of arrays
+   ## - include only rows containing values matching /n/
+   ## - include only the h3 column 
+
+   my $hoa = xsv_slurp( string   => $xsv_data,
+                        shape    => 'hoa',
+                        col_grep => sub { return 'h3' },
+                        row_grep => sub { return grep { /n/ } values %{ shift() } },
+                      );
+
+   ## $hoa contains:
+   ##
+   ##   {
+   ##      h3 => [ qw/ n r / ],
+   ##   }
+
 =back
 
 =head3 hoh
@@ -172,13 +231,34 @@ shape specifics:
 
 =over
 
-=item * C<key> - an xSV-separated string specifying the indexing columns
+=item * C<key> - an xSV string specifying the indexing column names
 
 =item * C<col_grep> - passed an ARRAY reference of column names, should return a list of column names to be included
 
 =item * C<row_grep> - passed a HASH reference of column name / value pairs, should return true or false whether the row should be included or not
 
 =back
+
+full example:
+
+   ## - convert xSV example to a hash of hashes
+   ## - index using h1 values
+   ## - include only rows containing values matching /n/
+   ## - include only the h3 column 
+
+   my $hoh = xsv_slurp( string   => $xsv_data,
+                        shape    => 'hoh',
+                        key      => 'h1',
+                        col_grep => sub { return 'h3' },
+                        row_grep => sub { return grep { /n/ } values %{ shift() } },
+                      );
+
+   ## $hoh contains:
+   ##
+   ##   {
+   ##      l => { h3 => 'n' },
+   ##      p => { h3 => 'r' },
+   ##   }
 
 =back
 
