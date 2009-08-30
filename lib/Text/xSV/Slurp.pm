@@ -88,7 +88,9 @@ The C<shape> parameter supports values of C<aoa>, C<aoh>, C<hoa> or C<hoh>. The 
 
 =head3 aoa
 
-sample conversion:
+=over
+
+example data structure:
 
    [
       [ qw/ h1 h2 h3 / ],
@@ -96,7 +98,7 @@ sample conversion:
       [ qw/ p  q  r  / ],
    ]
 
-parameter specifics:
+shape specifics:
 
 =over
 
@@ -106,34 +108,36 @@ parameter specifics:
 
 =back
 
+=back
+
 =head3 aoh
 
-Relevant options:
+=over
 
-   col_grep: passed an ARRAY reference of column names, should return a list
-             of column names to be included
-
-   row_grep: passed a HASH reference of column name / value pairs, should
-             return true or false whether the row should be included or not
-
-Sample conversion:
+example data structure:
 
    [
       { h1 => 'l', h2 => 'm', h3 => 'n' },
       { h1 => 'p', h2 => 'q', h3 => 'r' },
    ]
 
+shape specifics:
+
+=over
+
+=item * C<col_grep> - passed an ARRAY reference of column names, should return a list of column names to be included
+
+=item * C<row_grep> - passed a HASH reference of column name / value pairs, should return true or false whether the row should be included or not
+
+=back
+
+=back
+
 =head3 hoa
 
-Relevant options:
+=over
 
-   col_grep: passed an ARRAY reference of column names, should return a list
-             of column names to be included
-
-   row_grep: passed a HASH reference of column name / value pairs, should
-             return true or false whether the row should be included or not
-
-Sample conversion:
+example data structure:
 
    {
       h1 => [ qw/ l p / ],
@@ -141,24 +145,42 @@ Sample conversion:
       h3 => [ qw/ n r / ],
    }
 
+shape specifics:
+
+=over
+
+=item * C<col_grep> - passed an ARRAY reference of column names, should return a list of column names to be included
+
+=item * C<row_grep> - passed a HASH reference of column name / value pairs, should return true or false whether the row should be included or not
+
+=back
+
+=back
+
 =head3 hoh
 
-Relevant options:
+=over
 
-   key: an xSV-separated string specifying the indexing columns
-
-   col_grep: passed an ARRAY reference of column names, should return a list
-             of column names to be included
-
-   row_grep: passed a HASH reference of column name / value pairs, should
-             return true or false whether the row should be included or not
-
-Sample conversion (assuming a C<key> of C<'h2,h3'>):
+example data structure (assuming a C<key> of C<'h2,h3'>):
 
    {
    m => { n => { h1 => 'l' } },
    q => { r => { h1 => 'p' } },
    }
+
+shape specifics:
+
+=over
+
+=item * C<key> - an xSV-separated string specifying the indexing columns
+
+=item * C<col_grep> - passed an ARRAY reference of column names, should return a list of column names to be included
+
+=item * C<row_grep> - passed a HASH reference of column name / value pairs, should return true or false whether the row should be included or not
+
+=back
+
+=back
 
 =cut
 
