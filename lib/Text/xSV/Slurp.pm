@@ -66,7 +66,7 @@ Option summary:
 
 =item * C<string> - string to be parsed
 
-=item * C<shape> - data shape conversion target (C<aoa>, C<aoh>, C<hoa> or C<hoh>)
+=item * C<shape> - target data structure (C<aoa>, C<aoh>, C<hoa> or C<hoh>)
 
 =item * C<col_grep> - skip a subset of columns based on user callback
 
@@ -80,7 +80,9 @@ The C<file>, C<handle> and C<string> options are mutually exclusive. Only one
 source parameter may be passed in each call to C<xsv_slurp()>, otherwise a fatal
 exception will be raised.
 
-The C<shape> parameter supports values of C<aoa>, C<aoh>, C<hoa> or C<hoh>. The default shape is C<aoh>. Each shape affects certain parameters differently. Examples below assume the following data:
+The C<shape> parameter supports values of C<aoa>, C<aoh>, C<hoa> or C<hoh>. The
+default shape is C<aoh>. Each shape affects certain parameters differently.
+Examples below assume the following data:
 
 =over
 
@@ -106,9 +108,11 @@ shape specifics:
 
 =over
 
-=item * C<col_grep> -  passed an ARRAY reference of indexes, should return a list of indexes to be included
+=item * C<col_grep> -  passed an ARRAY reference of indexes, should return a
+                       list of indexes to be included
 
-=item * C<row_grep> - passed an ARRAY reference of values, should return true or false whether the row should be included or not
+=item * C<row_grep> - passed an ARRAY reference of values, should return true or
+                      false whether the row should be included or not
 
 =back
 
@@ -121,7 +125,7 @@ full example:
    my $aoa = xsv_slurp( string   => $xsv_data,
                         shape    => 'aoa',
                         col_grep => sub { return @( shift() }[0,-1] },
-                        row_grep => sub { return grep { /[nr]/ } @{ shift() } },
+                        row_grep => sub { return grep /[nr]/, @{ $_[0] } },
                       );
 
    ## $aoa contains:
@@ -148,9 +152,12 @@ shape specifics:
 
 =over
 
-=item * C<col_grep> - passed an ARRAY reference of column names, should return a list of column names to be included
+=item * C<col_grep> - passed an ARRAY reference of column names, should return a
+                      list of column names to be included
 
-=item * C<row_grep> - passed a HASH reference of column name / value pairs, should return true or false whether the row should be included or not
+=item * C<row_grep> - passed a HASH reference of column name / value pairs,
+                      should return true or false whether the row should be
+                      included or not
 
 =back
 
@@ -163,7 +170,7 @@ full example:
    my $aoh = xsv_slurp( string   => $xsv_data,
                         shape    => 'aoh',
                         col_grep => sub { return 'h3' },
-                        row_grep => sub { return grep { /n/ } values %{ shift() } },
+                        row_grep => sub { return grep /n/, values %{ $_[0] } },
                       );
 
    ## $aoh contains:
@@ -190,9 +197,12 @@ shape specifics:
 
 =over
 
-=item * C<col_grep> - passed an ARRAY reference of column names, should return a list of column names to be included
+=item * C<col_grep> - passed an ARRAY reference of column names, should return a
+                      list of column names to be included
 
-=item * C<row_grep> - passed a HASH reference of column name / value pairs, should return true or false whether the row should be included or not
+=item * C<row_grep> - passed a HASH reference of column name / value pairs,
+                      should return true or false whether the row should be
+                      included or not
 
 =back
 
@@ -205,7 +215,7 @@ full example:
    my $hoa = xsv_slurp( string   => $xsv_data,
                         shape    => 'hoa',
                         col_grep => sub { return 'h3' },
-                        row_grep => sub { return grep { /n/ } values %{ shift() } },
+                        row_grep => sub { return grep /n/, values %{ $_[0] } },
                       );
 
    ## $hoa contains:
@@ -233,9 +243,12 @@ shape specifics:
 
 =item * C<key> - an xSV string specifying the indexing column names
 
-=item * C<col_grep> - passed an ARRAY reference of column names, should return a list of column names to be included
+=item * C<col_grep> - passed an ARRAY reference of column names, should return a
+                      list of column names to be included
 
-=item * C<row_grep> - passed a HASH reference of column name / value pairs, should return true or false whether the row should be included or not
+=item * C<row_grep> - passed a HASH reference of column name / value pairs,
+                      should return true or false whether the row should be
+                      included or not
 
 =back
 
@@ -250,7 +263,7 @@ full example:
                         shape    => 'hoh',
                         key      => 'h1',
                         col_grep => sub { return 'h3' },
-                        row_grep => sub { return grep { /n/ } values %{ shift() } },
+                        row_grep => sub { return grep /n/, values %{ $_[0] } },
                       );
 
    ## $hoh contains:
@@ -316,7 +329,11 @@ sub xsv_slurp
    
    return $data;
    }
-   
+
+## arguments:
+## $handle - file handle
+## $csv    - the Text::CSV parser object
+## $o      - the user options passed to xsv_slurp   
 sub _as_aoa
    {
    my ( $handle, $csv, $o ) = @_;
@@ -359,6 +376,10 @@ sub _as_aoa
    return \@aoa;
    }   
    
+## arguments:
+## $handle - file handle
+## $csv    - the Text::CSV parser object
+## $o      - the user options passed to xsv_slurp   
 sub _as_aoh
    {
    my ( $handle, $csv, $o ) = @_;
@@ -418,6 +439,10 @@ sub _as_aoh
    return \@aoh;
    }   
 
+## arguments:
+## $handle - file handle
+## $csv    - the Text::CSV parser object
+## $o      - the user options passed to xsv_slurp   
 sub _as_hoa
    {
    my ( $handle, $csv, $o ) = @_;
@@ -485,6 +510,10 @@ sub _as_hoa
    return \%hoa;
    }   
 
+## arguments:
+## $handle - file handle
+## $csv    - the Text::CSV parser object
+## $o      - the user options passed to xsv_slurp   
 sub _as_hoh
    {
    my ( $handle, $csv, $o ) = @_;
@@ -577,27 +606,30 @@ sub _as_hoh
    return \%hoh;
    }   
 
+## arguments:
+## $src_type  - type of data source, handle, string or file
+## $src_value - the file name, file handle or xSV string
 sub _get_handle
    {
    my ( $src_type, $src_value ) = @_;
-   
+
    if ( $src_type eq 'handle' )
       {
       return $src_value;
       }
-      
+
    if ( $src_type eq 'string' )
       {
       open( my $handle, '<', \$src_value ) || confess "Error opening string handle: $!";
       return $handle;
       }
-   
+
    if ( $src_type eq 'file' )
       {
       open( my $handle, '<', $src_value ) || confess "Error opening $src_value: $!";
       return $handle;
       }
-   
+
    confess "Error: could not determine source type";
    }   
 
@@ -610,8 +642,6 @@ Dan Boorstein, C<< <dan at boorstein.net> >>
 Please report any bugs or feature requests to C<bug-text-xsv-slurp at rt.cpan.org>, or through
 the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Text-xSV-Slurp>.  I will be notified, and then you'll
 automatically be notified of progress on your bug as I make changes.
-
-
 
 
 =head1 SUPPORT
