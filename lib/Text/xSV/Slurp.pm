@@ -74,6 +74,8 @@ Option summary:
 
 =item * C<key> - xSV string used to build the keys used by the C<hoh> shape
 
+=item * C<text_csv> - option hash for L<Text::CSV> constructor
+
 =back
 
 The C<file>, C<handle> and C<string> options are mutually exclusive. Only one
@@ -81,10 +83,21 @@ source parameter may be passed in each call to C<xsv_slurp()>, otherwise a fatal
 exception will be raised.
 
 The C<shape> parameter supports values of C<aoa>, C<aoh>, C<hoa> or C<hoh>. The
-default shape is C<aoh>. Each shape affects certain parameters differently.
-Examples below assume the following data:
+default shape is C<aoh>. Each shape affects certain parameters differently (see
+below).
+
+The C<text_csv> option can be used to control L<Text::CSV> parsing. The given
+HASH reference is passed to the L<Text::CSV> constructor. If the C<text_csv>
+option is undefined, the default L<Text::CSV> constructor is called. For
+example, to change the separator to a colon, you could do the following:
+
+   my $aoh = xsv_slurp( file => 'foo.csv', text_csv => { sep_char => ':' } );
+
+C<shape> option details:
 
 =over
+
+   ## examples below assume the following data
 
    h1,h2,h3
    l,m,n
@@ -312,20 +325,8 @@ sub xsv_slurp
    
    my $src      = $given_srcs[0];
    my $handle   = _get_handle( $src => $o{$src} );
-   my %csv_opts = %o;
-   
-   delete @csv_opts{ qw/
-      file
-      handle
-      string
-      shape
-      key
-      col_grep
-      row_grep
-      / };
-   
-   my $csv  = Text::CSV->new( \%csv_opts );
-   my $data = $shaper->( $handle, $csv, \%o );
+   my $csv      = Text::CSV->new( $o{'text_csv'} || () );
+   my $data     = $shaper->( $handle, $csv, \%o );
    
    return $data;
    }
