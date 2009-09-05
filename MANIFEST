@@ -8,6 +8,7 @@ t/01-shapes.t
 t/02-col_grep.t
 t/03-row_grep.t
 t/04-misc.t
+t/05-agg.t
 t/pod-coverage.t
 t/pod.t
 Makefile.PL

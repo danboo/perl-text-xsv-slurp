@@ -74,6 +74,8 @@ Option summary:
 
 =item * C<key> - xSV string or ARRAY used to build the keys of the C<hoh> shape
 
+=item * C<agg> - control how collisions are handled for the C<hoh> shape
+
 =item * C<text_csv> - option hash for L<Text::CSV> constructor
 
 =back
@@ -256,6 +258,8 @@ shape specifics:
 =over
 
 =item * C<key> - an xSV string or ARRAY specifying the indexing column names
+
+=item * C<agg> - specify how collisions are handled with predefined or custom methods
 
 =item * C<col_grep> - passed an ARRAY reference of column names, should return a
                       list of column names to be included
@@ -512,6 +516,8 @@ sub _as_hoa
    return \%hoa;
    }   
 
+my %predefined_aggs;
+
 ## arguments:
 ## $handle - file handle
 ## $csv    - the Text::CSV parser object
@@ -599,7 +605,35 @@ sub _as_hoh
             %line = map { $_ => $line{$_} } @grep_headers;
             }
          
-         %{ $leaf } = %line;
+         for my $key ( keys %line )
+            {
+
+            my $agg = $o->{'agg'}{$key} || $o->{'agg'};
+
+            if ( $agg )
+               {
+
+               use Data::Dumper;
+  print Dumper $agg;
+
+               if ( ! ref $agg )
+                  {
+
+                  my $real_agg = $predefined_aggs{$agg};
+ 
+                  confess "Error: unrecognized agg name ($agg)";
+
+                  $agg = $real_agg;
+                  
+                  }
+
+               }
+            else
+               {
+               $leaf->{$key} = $line{$key};
+               }
+
+            }
             
          }
          
