@@ -72,7 +72,7 @@ Option summary:
 
 =item * C<row_grep> - skip a subset of rows based on user callback
 
-=item * C<key> - xSV string used to build the keys used by the C<hoh> shape
+=item * C<key> - xSV string or ARRAY used to build the keys of the C<hoh> shape
 
 =item * C<text_csv> - option hash for L<Text::CSV> constructor
 
@@ -255,7 +255,7 @@ shape specifics:
 
 =over
 
-=item * C<key> - an xSV string specifying the indexing column names
+=item * C<key> - an xSV string or ARRAY specifying the indexing column names
 
 =item * C<col_grep> - passed an ARRAY reference of column names, should return a
                       list of column names to be included
