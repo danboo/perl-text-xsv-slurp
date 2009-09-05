@@ -4,6 +4,10 @@ MANIFEST
 README
 lib/Text/xSV/Slurp.pm
 t/00-load.t
+t/01-shapes.t
+t/02-col_grep.t
+t/03-row_grep.t
+t/04-misc.t
 t/pod-coverage.t
 t/pod.t
 Makefile.PL

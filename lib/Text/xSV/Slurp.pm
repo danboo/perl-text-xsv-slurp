@@ -91,7 +91,8 @@ HASH reference is passed to the L<Text::CSV> constructor. If the C<text_csv>
 option is undefined, the default L<Text::CSV> constructor is called. For
 example, to change the separator to a colon, you could do the following:
 
-   my $aoh = xsv_slurp( file => 'foo.csv', text_csv => { sep_char => ':' } );
+   my $aoh = xsv_slurp( file => 'foo.csv',
+                    text_csv => { sep_char => ':' } );
 
 C<shape> option details:
 
