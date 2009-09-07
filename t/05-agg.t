@@ -1,7 +1,7 @@
 use warnings;
 use strict;
 
-use Test::More tests => 6;
+use Test::More tests => 7;
 
 use Text::xSV::Slurp 'xsv_slurp';
 
@@ -85,6 +85,29 @@ EOIN
       
    opts =>
       { shape => 'hoh', key => 'a,c', agg => '+' },
+
+   },
+
+   {
+   
+   id => 'hash histogram agg',
+
+   in => <<EOIN,
+a,b,c
+1,2,3
+1,2,3
+1,4,3
+1,4,3
+1,4,3
+EOIN
+
+   exp => 
+      {
+      1 => { 3 => { b => { 2 => 2, 4 => 3 } } },
+      },
+      
+   opts =>
+      { shape => 'hoh', key => 'a,c', agg => '{}' },
 
    },
 

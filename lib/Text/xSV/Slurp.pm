@@ -540,6 +540,13 @@ my %predefined_aggs =
       push @{ $ref }, $nval; 
       return $ref;
       },
+   '{}' =>  sub
+      {
+      my ( $key, $nval, $oval, $line, $hoh ) = @_;
+      my $ref = $oval || {};
+      $ref->{$nval} ++;
+      return $ref;
+      },
    
    );
 
