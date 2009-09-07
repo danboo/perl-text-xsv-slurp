@@ -518,21 +518,25 @@ sub _as_hoa
 
 my %predefined_aggs =
    (
+   ## assign
    '=' =>  sub
       {
       my ( $key, $nval, $oval, $line, $hoh ) = @_;
       return $nval;
       },
+   ## die
    '!' =>  sub
       {
       my ( $key, $nval, $oval, $line, $hoh ) = @_;
       confess "Error: key collision in HoH construction";
       },
+   ## sum
    '+' =>  sub
       {
       my ( $key, $nval, $oval, $line, $hoh ) = @_;
       return ( $oval || 0 ) + ( $nval || 0 );
       },
+   ## push to array
    '[]' =>  sub
       {
       my ( $key, $nval, $oval, $line, $hoh ) = @_;
@@ -540,6 +544,7 @@ my %predefined_aggs =
       push @{ $ref }, $nval; 
       return $ref;
       },
+   ## value histogram
    '{}' =>  sub
       {
       my ( $key, $nval, $oval, $line, $hoh ) = @_;
