@@ -1,7 +1,7 @@
 use warnings;
 use strict;
 
-use Test::More tests => 7;
+use Test::More tests => 8;
 
 use Text::xSV::Slurp 'xsv_slurp';
 
@@ -148,4 +148,10 @@ eval { xsv_slurp( string => "a,b\n1,1\n1,1\n", shape => 'hoh', key => 'a', agg =
 
 my $err = $@;
 
-like( $@, qr/\AError: key collision/, 'fatal agg' );
+like( $err, qr/\AError: key collision/, 'fatal agg' );
+
+eval { xsv_slurp( string => "a,b\n1,1\n", shape => 'hoh', key => 'a', agg => '!' ) };
+
+$err = $@;
+
+ok( ! $err, 'fatal agg - no collision' );
