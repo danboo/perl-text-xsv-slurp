@@ -516,7 +516,21 @@ sub _as_hoa
    return \%hoa;
    }   
 
-my %predefined_aggs;
+my %predefined_aggs =
+   (
+   '+' =>  sub
+      {
+      my ( $key, $nval, $oval, $line, $hoh ) = @_;
+      return ( $oval || 0 ) + ( $nval || 0 );
+      },
+   '[]' =>  sub
+      {
+      my ( $key, $nval, $oval, $line, $hoh ) = @_;
+      my $ref = $oval || [];
+      push @{ $ref }, $nval; 
+      return $ref;
+      },
+   );
 
 ## arguments:
 ## $handle - file handle
@@ -568,7 +582,23 @@ sub _as_hoh
          @key = $csv->fields;
 
          }
-         
+
+      my %agg_actions;
+
+      if ( $o->{'agg'} )
+         {
+
+         my $agg = $predefined_aggs{ $o->{'agg'} } || $o->{'agg'};
+
+         for my $header ( @headers )
+            {
+
+            $agg_actions{$header} = $agg;
+               
+            }
+
+         }
+
       while ( my $line = <$handle> )
          {
          chomp $line;
@@ -608,30 +638,18 @@ sub _as_hoh
          for my $key ( keys %line )
             {
 
-            my $agg = $o->{'agg'}{$key} || $o->{'agg'};
+            my $new_value = $line{$key};
+
+            my $agg = $agg_actions{$key};
 
             if ( $agg )
                {
 
-               use Data::Dumper;
-  print Dumper $agg;
-
-               if ( ! ref $agg )
-                  {
-
-                  my $real_agg = $predefined_aggs{$agg};
- 
-                  confess "Error: unrecognized agg name ($agg)";
-
-                  $agg = $real_agg;
-                  
-                  }
+               $new_value = $agg->( $key, $new_value, $leaf->{$key}, \%line, \%hoh );
 
                }
-            else
-               {
-               $leaf->{$key} = $line{$key};
-               }
+
+            $leaf->{$key} = $new_value;
 
             }
             
