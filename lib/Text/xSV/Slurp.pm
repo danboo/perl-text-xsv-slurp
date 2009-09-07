@@ -518,6 +518,16 @@ sub _as_hoa
 
 my %predefined_aggs =
    (
+   '=' =>  sub
+      {
+      my ( $key, $nval, $oval, $line, $hoh ) = @_;
+      return $nval;
+      },
+   '!' =>  sub
+      {
+      my ( $key, $nval, $oval, $line, $hoh ) = @_;
+      confess "Error: key collision in HoH construction";
+      },
    '+' =>  sub
       {
       my ( $key, $nval, $oval, $line, $hoh ) = @_;
@@ -530,6 +540,7 @@ my %predefined_aggs =
       push @{ $ref }, $nval; 
       return $ref;
       },
+   
    );
 
 ## arguments:
