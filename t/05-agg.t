@@ -1,7 +1,7 @@
 use warnings;
 use strict;
 
-use Test::More tests => 5;
+use Test::More tests => 6;
 
 use Text::xSV::Slurp 'xsv_slurp';
 
@@ -85,6 +85,29 @@ EOIN
       
    opts =>
       { shape => 'hoh', key => 'a,c', agg => '+' },
+
+   },
+
+   {
+   
+   id => 'custom count agg',
+
+   in => <<EOIN,
+a,b,c
+1,2,3
+1,2,3
+1,2,3
+1,2,3
+1,2,3
+EOIN
+
+   exp => 
+      {
+      1 => { 3 => { b => 5 } },
+      },
+      
+   opts =>
+      { shape => 'hoh', key => 'a,c', agg => sub { return ( $_[2] || 0 ) + 1 } },
 
    },
 
