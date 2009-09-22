@@ -29,11 +29,12 @@ EOIN
       },
 
    },
+
    );
 
 for my $test ( @tests )
    {
-   my $got = xsv_slurp( string => $test->{'in'}, %{ $test->{'opts'} } );
+   my $got = xsv_slurp( $test->{'in'}, %{ $test->{'opts'} } );
    my $exp = $test->{'exp'};
    my $id  = $test->{'id'};
    is_deeply($got, $exp, $id);

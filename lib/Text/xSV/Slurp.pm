@@ -305,7 +305,26 @@ my %shape_map =
 
 sub xsv_slurp
    {
-   my %o = @_;
+   my @o = @_;
+   
+   if ( @o % 2 )
+      {
+      my $src = shift @o;
+      if ( ref $src )
+         {
+         @o = ( handle => $src, @o );
+         }
+      elsif ( $src =~ /[\r\n]/ )
+         {
+         @o = ( string => $src, @o );
+         }
+      else
+         {
+         @o = ( file => $src, @o );
+         }
+      }
+   
+   my %o = @o;
    
    my @all_srcs   = qw/ file handle string /;
    my @given_srcs = grep { defined $o{$_} } @all_srcs;
