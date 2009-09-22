@@ -34,7 +34,7 @@ of header-to-value pairs.
 
     use Text::xSV::Slurp 'xsv_slurp';
     
-    my $aoh = xsv_slurp( file => 'foo.csv' );
+    my $aoh = xsv_slurp( 'foo.csv' );
     
     ## if foo.csv contains:
     ##
@@ -83,6 +83,21 @@ Option summary:
 The C<file>, C<handle> and C<string> options are mutually exclusive. Only one
 source parameter may be passed in each call to C<xsv_slurp()>, otherwise a fatal
 exception will be raised.
+
+The source can also be provided implicitly, without the associated key, and the
+source type will be guessed by examining the first item in the option list. If
+the item is a reference type, it is treated as a C<handle> source. If the item
+contains a newline or carriage return, it is treated as a C<string> source. If
+the item passes none of the prior tests, it is treated as a C<file> source.
+
+   ## implicit C<handle> source
+   my $aoa = xsv_slurp( \*STDIN, shape => 'aoa' );
+
+   ## implicit C<string> source
+   my $aoh = xsv_slurp( "h1,h2\n" . "d1,d2\n" );
+
+   ## implicit C<file> source
+   my $aoh = xsv_slurp( 'foo.csv' );
 
 The C<shape> parameter supports values of C<aoa>, C<aoh>, C<hoa> or C<hoh>. The
 default shape is C<aoh>. Each shape affects certain parameters differently (see
