@@ -38,15 +38,15 @@ of header-to-value pairs.
     
     ## if foo.csv contains:
     ##
-    ##   head1,head2
-    ##   potato1,potato2
-    ##   monkey1,monkey2
+    ##   uid,name
+    ##   342,tim
+    ##   939,danboo
     ##
     ## then $aoh contains:
     ##
     ##   [
-    ##     { head1 => 'potato1', head2 => 'potato2' },
-    ##     { head1 => 'monkey1', head2 => 'monkey2' },
+    ##     { uid => '342', name => 'tim' },
+    ##     { uid => '939', name => 'danboo' },
     ##   ]
              
 =head1 FUNCTIONS
