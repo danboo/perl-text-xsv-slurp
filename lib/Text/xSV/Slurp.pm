@@ -321,7 +321,8 @@ my %shape_map =
 sub xsv_slurp
    {
    my @o = @_;
-   
+
+   ## guess the source if there is an odd number of args
    if ( @o % 2 )
       {
       my $src = shift @o;
@@ -338,9 +339,11 @@ sub xsv_slurp
          @o = ( file => $src, @o );
          }
       }
-   
+
+   ## convert argument list to option hash 
    my %o = @o;
-   
+
+   ## validate the source type   
    my @all_srcs   = qw/ file handle string /;
    my @given_srcs = grep { defined $o{$_} } @all_srcs;
    
@@ -352,7 +355,8 @@ sub xsv_slurp
       {
       confess "Error: too many sources given (@given_srcs), specify only one.";
       }
-      
+
+   ## validate the shape      
    my $shape  = defined $o{'shape'} ? lc $o{'shape'} : 'aoh';
    my $shaper = $shape_map{ $shape };
    
@@ -362,9 +366,16 @@ sub xsv_slurp
       confess "Error: unrecognized shape given ($shape). Must be one of: @all_shapes"
       }
    
+   ## isolate the source
    my $src      = $given_srcs[0];
+   
+   ## convert the source to a handle
    my $handle   = _get_handle( $src => $o{$src} );
+   
+   ## create the CSV parser
    my $csv      = Text::CSV->new( $o{'text_csv'} || () );
+   
+   ## run the data conversion
    my $data     = $shaper->( $handle, $csv, \%o );
    
    return $data;
@@ -550,8 +561,13 @@ sub _as_hoa
    return \%hoa;
    }   
 
+## predefined methods for handling hoh collisions
 my %predefined_aggs =
    (
+   
+   ## count
+   ## average
+   ## weighted-average
 
    ## assign
    '=' =>  sub
