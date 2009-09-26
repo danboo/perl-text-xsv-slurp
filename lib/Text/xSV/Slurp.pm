@@ -4,7 +4,6 @@ use warnings;
 use strict;
 
 use Carp 'confess', 'cluck';
-use Exporter;
 use Text::CSV;
 
 use base 'Exporter';
