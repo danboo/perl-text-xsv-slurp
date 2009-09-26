@@ -5,6 +5,7 @@ use strict;
 
 use Carp 'confess', 'cluck';
 use Text::CSV;
+use IO::String;
 
 use base 'Exporter';
 
@@ -773,7 +774,7 @@ sub _get_handle
 
    if ( $src_type eq 'string' )
       {
-      open( my $handle, '<', \$src_value ) || confess "Error opening string handle: $!";
+      my $handle = IO::String->new( $src_value );
       return $handle;
       }
 
@@ -801,8 +802,6 @@ Dan Boorstein, C<< <dan at boorstein.net> >>
 =item * add test for warn agg key
 
 =item * die and warn agg keys should include the value path in the output
-
-=item * use more backwards-compatible method of reading a string as a file
 
 =back
 
