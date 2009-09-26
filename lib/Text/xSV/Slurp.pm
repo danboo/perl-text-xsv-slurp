@@ -3,7 +3,7 @@ package Text::xSV::Slurp;
 use warnings;
 use strict;
 
-use Carp 'confess';
+use Carp 'confess', 'cluck';
 use Exporter;
 use Text::CSV;
 
@@ -565,19 +565,19 @@ sub _as_hoa
 my %predefined_aggs =
    (
    
-   ## count
+   ## warn
    ## average
    ## weighted-average
-
+   
    ## assign
-   '=' =>  sub
+   'assign' =>  sub
       {
       my ( $key, $nval, $oval, $line, $hoh ) = @_;
       return $nval;
       },
 
    ## die
-   '!' =>  sub
+   'die' =>  sub
       {
       my ( $key, $nval, $oval, $line, $hoh ) = @_;
       if ( defined $oval )
@@ -586,15 +586,25 @@ my %predefined_aggs =
          }
       },
 
+   ## warn
+   'warn' =>  sub
+      {
+      my ( $key, $nval, $oval, $line, $hoh ) = @_;
+      if ( defined $oval )
+         {
+         cluck "Warning: key collision in HoH construction";
+         }
+      },
+
    ## sum
-   '+' =>  sub
+   'sum' =>  sub
       {
       my ( $key, $nval, $oval, $line, $hoh ) = @_;
       return ( $oval || 0 ) + ( $nval || 0 );
       },
 
    ## push to array
-   '[]' =>  sub
+   'push' =>  sub
       {
       my ( $key, $nval, $oval, $line, $hoh ) = @_;
       my $ref = $oval || [];
@@ -602,8 +612,17 @@ my %predefined_aggs =
       return $ref;
       },
 
+   ## unshift to array
+   'unshift' =>  sub
+      {
+      my ( $key, $nval, $oval, $line, $hoh ) = @_;
+      my $ref = $oval || [];
+      unshift @{ $ref }, $nval; 
+      return $ref;
+      },
+
    ## value histogram
-   '{}' =>  sub
+   'frequency' =>  sub
       {
       my ( $key, $nval, $oval, $line, $hoh ) = @_;
       my $ref = $oval || {};

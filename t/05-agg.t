@@ -44,7 +44,7 @@ EOIN
       },
       
    opts =>
-      { shape => 'hoh', key => 'a,c', agg => '=' },
+      { shape => 'hoh', key => 'a,c', agg => 'assign' },
 
    },
 
@@ -64,7 +64,7 @@ EOIN
       },
       
    opts =>
-      { shape => 'hoh', key => 'a,c', agg => '[]' },
+      { shape => 'hoh', key => 'a,c', agg => 'push' },
 
    },
 
@@ -84,7 +84,7 @@ EOIN
       },
       
    opts =>
-      { shape => 'hoh', key => 'a,c', agg => '+' },
+      { shape => 'hoh', key => 'a,c', agg => 'sum' },
 
    },
 
@@ -107,7 +107,7 @@ EOIN
       },
       
    opts =>
-      { shape => 'hoh', key => 'a,c', agg => '{}' },
+      { shape => 'hoh', key => 'a,c', agg => 'frequency' },
 
    },
 
@@ -144,13 +144,13 @@ for my $test ( @tests )
    is_deeply($got, $exp, $id);
    }
 
-eval { xsv_slurp( string => "a,b\n1,1\n1,1\n", shape => 'hoh', key => 'a', agg => '!' ) };
+eval { xsv_slurp( string => "a,b\n1,1\n1,1\n", shape => 'hoh', key => 'a', agg => 'die' ) };
 
 my $err = $@;
 
 like( $err, qr/\AError: key collision/, 'fatal agg' );
 
-eval { xsv_slurp( string => "a,b\n1,1\n", shape => 'hoh', key => 'a', agg => '!' ) };
+eval { xsv_slurp( string => "a,b\n1,1\n", shape => 'hoh', key => 'a', agg => 'die' ) };
 
 $err = $@;
 
