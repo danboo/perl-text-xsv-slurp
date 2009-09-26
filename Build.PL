@@ -9,6 +9,8 @@ my $builder = Module::Build->new(
     dist_version_from   => 'lib/Text/xSV/Slurp.pm',
     build_requires => {
         'Test::More' => 0,
+        'Text::CSV'  => 0,
+        'IO::String' => 0,
     },
     add_to_cleanup      => [ 'Text-xSV-Slurp-*' ],
     create_makefile_pl => 'traditional',

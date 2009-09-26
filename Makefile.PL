@@ -8,7 +8,9 @@ WriteMakefile
           'EXE_FILES' => [],
           'VERSION_FROM' => 'lib/Text/xSV/Slurp.pm',
           'PREREQ_PM' => {
-                           'Test::More' => 0
+                           'Test::More' => 0,
+                           'IO::String' => 0,
+                           'Text::CSV' => 0
                          }
         )
 ;
