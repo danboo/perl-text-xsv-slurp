@@ -790,6 +790,22 @@ sub _get_handle
 
 Dan Boorstein, C<< <dan at boorstein.net> >>
 
+=head1 TODO
+
+=over
+
+=item * document hoh 'agg' predefined keys
+
+=item * add average, weighted-average and count agg keys and tests
+
+=item * add test for warn agg key
+
+=item * die and warn agg keys should include the value path in the output
+
+=item * use more backwards-compatible method of reading a string as a file
+
+=back
+
 =head1 BUGS
 
 Please report any bugs or feature requests to C<bug-text-xsv-slurp at rt.cpan.org>, or through
