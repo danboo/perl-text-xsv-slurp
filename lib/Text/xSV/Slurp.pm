@@ -572,14 +572,14 @@ my %predefined_aggs =
    ## assign
    'assign' =>  sub
       {
-      my ( $key, $nval, $oval, $line, $hoh ) = @_;
+      my ( $key, $nval, $oval, $line, $hoh, $scratch ) = @_;
       return $nval;
       },
 
    ## die
    'die' =>  sub
       {
-      my ( $key, $nval, $oval, $line, $hoh ) = @_;
+      my ( $key, $nval, $oval, $line, $hoh, $scratch ) = @_;
       if ( defined $oval )
          {
          confess "Error: key collision in HoH construction";
@@ -589,7 +589,7 @@ my %predefined_aggs =
    ## warn
    'warn' =>  sub
       {
-      my ( $key, $nval, $oval, $line, $hoh ) = @_;
+      my ( $key, $nval, $oval, $line, $hoh, $scratch ) = @_;
       if ( defined $oval )
          {
          cluck "Warning: key collision in HoH construction";
@@ -599,14 +599,14 @@ my %predefined_aggs =
    ## sum
    'sum' =>  sub
       {
-      my ( $key, $nval, $oval, $line, $hoh ) = @_;
+      my ( $key, $nval, $oval, $line, $hoh, $scratch ) = @_;
       return ( $oval || 0 ) + ( $nval || 0 );
       },
 
    ## push to array
    'push' =>  sub
       {
-      my ( $key, $nval, $oval, $line, $hoh ) = @_;
+      my ( $key, $nval, $oval, $line, $hoh, $scratch ) = @_;
       my $ref = $oval || [];
       push @{ $ref }, $nval; 
       return $ref;
@@ -615,7 +615,7 @@ my %predefined_aggs =
    ## unshift to array
    'unshift' =>  sub
       {
-      my ( $key, $nval, $oval, $line, $hoh ) = @_;
+      my ( $key, $nval, $oval, $line, $hoh, $scratch ) = @_;
       my $ref = $oval || [];
       unshift @{ $ref }, $nval; 
       return $ref;
@@ -624,7 +624,7 @@ my %predefined_aggs =
    ## value histogram
    'frequency' =>  sub
       {
-      my ( $key, $nval, $oval, $line, $hoh ) = @_;
+      my ( $key, $nval, $oval, $line, $hoh, $scratch ) = @_;
       my $ref = $oval || {};
       $ref->{$nval} ++;
       return $ref;
@@ -734,6 +734,8 @@ sub _as_hoh
             {
             %line = map { $_ => $line{$_} } @grep_headers;
             }
+            
+         my %scratch;
          
          for my $key ( keys %line )
             {
@@ -744,8 +746,10 @@ sub _as_hoh
 
             if ( $agg )
                {
+               
+               my $scratch = ( $scratch{$key} ||= {} );
 
-               $new_value = $agg->( $key, $new_value, $leaf->{$key}, \%line, \%hoh );
+               $new_value = $agg->( $key, $new_value, $leaf->{$key}, \%line, \%hoh, $scratch );
 
                }
 
@@ -795,13 +799,15 @@ Dan Boorstein, C<< <dan at boorstein.net> >>
 
 =over
 
-=item * document hoh 'agg' predefined keys
+=item * agg specific actions by key
 
 =item * add average, weighted-average and count agg keys and tests
 
 =item * add test for warn agg key
 
 =item * die and warn agg keys should include the value path in the output
+
+=item * document hoh 'agg' predefined keys
 
 =back
 
