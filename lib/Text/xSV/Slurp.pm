@@ -17,11 +17,11 @@ Text::xSV::Slurp - Convert xSV data to and from common data shapes.
 
 =head1 VERSION
 
-Version 0.01
+Version 0.1
 
 =cut
 
-our $VERSION = '0.01';
+our $VERSION = '0.1';
 
 =head1 SYNOPSIS
 
@@ -74,8 +74,6 @@ Option summary:
 
 =item * C<key> - xSV string or ARRAY used to build the keys of the C<hoh> shape
 
-=item * C<agg> - control how aggregation is handled for the C<hoh> shape
-
 =item * C<text_csv> - option hash for L<Text::CSV> constructor
 
 =back
@@ -111,7 +109,7 @@ example, to change the separator to a colon, you could do the following:
    my $aoh = xsv_slurp( file => 'foo.csv',
                     text_csv => { sep_char => ':' } );
 
-C<shape> option details:
+=head3 C<shape>-specific option details:
 
 =over
 
@@ -123,7 +121,7 @@ C<shape> option details:
 
 =back
 
-=head3 aoa
+=head4 aoa
 
 =over
 
@@ -168,7 +166,7 @@ full example:
 
 =back
 
-=head3 aoh
+=head4 aoh
 
 =over
 
@@ -212,7 +210,7 @@ full example:
 
 =back
 
-=head3 hoa
+=head4 hoa
 
 =over
 
@@ -257,7 +255,7 @@ full example:
 
 =back
 
-=head3 hoh
+=head4 hoh
 
 =over
 
@@ -273,8 +271,6 @@ shape specifics:
 =over
 
 =item * C<key> - an xSV string or ARRAY specifying the indexing column names
-
-=item * C<agg> - specify how aggregation is handled with predefined or custom methods
 
 =item * C<col_grep> - passed an ARRAY reference of column names, should return a
                       list of column names to be included
@@ -565,7 +561,6 @@ sub _as_hoa
 my %predefined_aggs =
    (
    
-   ## warn
    ## average
    ## weighted-average
    
@@ -808,6 +803,10 @@ Dan Boorstein, C<< <dan at boorstein.net> >>
 =item * die and warn agg keys should include the value path in the output
 
 =item * document hoh 'agg' predefined keys
+
+=item * document hoh 'agg' custom keys
+
+=item * add a recipes/examples section to cover grep and agg examples
 
 =back
 
