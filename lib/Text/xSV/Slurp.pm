@@ -17,11 +17,11 @@ Text::xSV::Slurp - Convert xSV data to and from common data shapes.
 
 =head1 VERSION
 
-Version 0.1
+Version 0.20
 
 =cut
 
-our $VERSION = '0.1';
+our $VERSION = '0.20';
 
 =head1 SYNOPSIS
 
@@ -401,11 +401,13 @@ sub _as_aoa
          
       my @line = $csv->fields;
 
+      ## skip unwanted rows
       if ( defined $o->{'row_grep'} )
          {
          next if ! $o->{'row_grep'}->( \@line );
          }
-         
+      
+      ## remove unwanted cols   
       if ( defined $o->{'col_grep'} )
          {
          if ( ! $col_grep )
@@ -467,11 +469,13 @@ sub _as_aoh
          
          @line{ @headers } = $csv->fields;
 
+         ## skip unwanted rows
          if ( defined $o->{'row_grep'} )
             {
             next if ! $o->{'row_grep'}->( \%line );
             }
 
+         ## remove unwanted cols
          if ( defined $o->{'col_grep'} )
             {
             %line = map { $_ => $line{$_} } @grep_headers;
@@ -535,11 +539,13 @@ sub _as_hoa
          
          @line{ @headers } = $csv->fields;
 
+         ## skip unwanted rows
          if ( defined $o->{'row_grep'} )
             {
             next if ! $o->{'row_grep'}->( \%line );
             }
 
+         ## remove unwanted cols
          if ( defined $o->{'col_grep'} )
             {
             %line = map { $_ => $line{$_} } @grep_headers;
@@ -678,6 +684,8 @@ sub _as_hoh
 
          }
 
+      ## set the aggregation method for each header. currently this is global,
+      ## but will eventually be per header.
       my %agg_actions;
 
       if ( $o->{'agg'} )
@@ -707,11 +715,13 @@ sub _as_hoh
          
          @line{ @headers } = $csv->fields;
          
+         ## skip unwanted rows
          if ( defined $o->{'row_grep'} )
             {
             next if ! $o->{'row_grep'}->( \%line );
             }
 
+         ## step through the nested keys
          my $leaf = \%hoh;
          
          for my $k ( @key )
@@ -722,16 +732,17 @@ sub _as_hoh
             $leaf         = $leaf->{$v};
             
             }
-            
+         
+         ## remove key headers from the line   
          delete @line{ @key };
          
+         ## remove unwanted cols
          if ( defined $o->{'col_grep'} )
             {
             %line = map { $_ => $line{$_} } @grep_headers;
             }
-            
-         my %scratch;
-         
+
+         ## perform the aggregation if applicable            
          for my $key ( keys %line )
             {
 
@@ -742,9 +753,7 @@ sub _as_hoh
             if ( $agg )
                {
                
-               my $scratch = ( $scratch{$key} ||= {} );
-
-               $new_value = $agg->( $key, $new_value, $leaf->{$key}, \%line, \%hoh, $scratch );
+               $new_value = $agg->( $key, $new_value, $leaf->{$key}, \%line, \%hoh );
 
                }
 
