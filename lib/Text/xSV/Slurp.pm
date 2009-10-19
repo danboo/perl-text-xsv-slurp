@@ -9,11 +9,11 @@ use IO::String;
 
 use base 'Exporter';
 
-our @EXPORT_OK = qw/ xsv_slurp /;
+our @EXPORT = qw/ xsv_slurp /;
 
 =head1 NAME
 
-Text::xSV::Slurp - Convert xSV data to and from common data shapes.
+Text::xSV::Slurp - Convert xSV data to common data shapes.
 
 =head1 VERSION
 
