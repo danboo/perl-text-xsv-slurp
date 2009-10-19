@@ -1,5 +1,9 @@
 Revision history for Text-xSV-Slurp
 
-0.01    Date/time
-        First version, released on an unsuspecting world.
+0.11    Sun Oct 18 20:45:10 2009
+        - export xsv_slurp by default
+        - remove mention of converting data to xSV format from SYNOPSIS
+
+0.10    Sun Oct 18 10:44:47 2009
+        - initial release
 
