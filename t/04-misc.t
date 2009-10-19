@@ -3,7 +3,7 @@ use strict;
 
 use Test::More tests => 1;
 
-use Text::xSV::Slurp 'xsv_slurp';
+use Text::xSV::Slurp;
 
 my @tests =
    (
