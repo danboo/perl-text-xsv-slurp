@@ -1,16 +1,28 @@
 Text-xSV-Slurp
 
-The README is used to introduce the module and provide instructions on
-how to install the module, any machine dependencies it may have (for
-example C compilers and installed libraries) and any other information
-that should be provided before the module is installed.
+Text::xSV::Slurp converts between xSV data and a variety of nested data
+shapes, allowing both column and row filtering using user defined functions.
 
-A README file is required for CPAN modules since CPAN extracts the README
-file from a module distribution so that people browsing the archive
-can use it to get an idea of the module's uses. It is usually a good idea
-to provide version information here so that people can decide whether
-fixes for the module are worth downloading.
+This brief example creates an array of hashes from a file, where each array
+record corresponds to a line of the file, and each line is represented as a hash
+of header-to-value pairs.
 
+    use Text::xSV::Slurp 'xsv_slurp';
+    
+    my $aoh = xsv_slurp( 'foo.csv' );
+    
+    ## if foo.csv contains:
+    ##
+    ##   uid,name
+    ##   342,tim
+    ##   939,danboo
+    ##
+    ## then $aoh contains:
+    ##
+    ##   [
+    ##     { uid => '342', name => 'tim' },
+    ##     { uid => '939', name => 'danboo' },
+    ##   ]
 
 INSTALLATION
 
