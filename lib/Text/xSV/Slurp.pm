@@ -74,7 +74,7 @@ Option summary:
 
 =item * C<key> - xSV string or ARRAY used to build the keys of the C<hoh> shape
 
-=item * C<text_csv> - option hash for L<Text::CSV> constructor
+=item * C<text_csv> - option hash for L<Text::CSV>/L<Text::CSV_XS> constructor
 
 =back
 
@@ -101,29 +101,25 @@ The C<shape> parameter supports values of C<aoa>, C<aoh>, C<hoa> or C<hoh>. The
 default shape is C<aoh>. Each shape affects certain parameters differently (see
 below).
 
-The C<text_csv> option can be used to control L<Text::CSV> parsing. The given
-HASH reference is passed to the L<Text::CSV> constructor. If the C<text_csv>
-option is undefined, the default L<Text::CSV> constructor is called. For
-example, to change the separator to a colon, you could do the following:
+The C<text_csv> option can be used to control L<Text::CSV>/L<Text::CSV_XS>
+parsing. The given HASH reference is passed to the L<Text::CSV> constructor. If
+the C<text_csv> option is undefined, the default L<Text::CSV> constructor is
+called. For example, to change the separator to a colon, you could do the
+following:
 
    my $aoh = xsv_slurp( file => 'foo.csv',
                     text_csv => { sep_char => ':' } );
 
-=head3 C<shape>-specific option details:
+=head3 aoa
 
 =over
 
-   ## examples below assume the following data
+example input:
 
    h1,h2,h3
    l,m,n
    p,q,r
 
-=back
-
-=head4 aoa
-
-=over
 
 example data structure:
 
@@ -166,9 +162,15 @@ full example:
 
 =back
 
-=head4 aoh
+=head3 aoh
 
 =over
+
+example input:
+
+   h1,h2,h3
+   l,m,n
+   p,q,r
 
 example data structure:
 
@@ -210,9 +212,15 @@ full example:
 
 =back
 
-=head4 hoa
+=head3 hoa
 
 =over
+
+example input:
+
+   h1,h2,h3
+   l,m,n
+   p,q,r
 
 example data structure:
 
@@ -255,9 +263,15 @@ full example:
 
 =back
 
-=head4 hoh
+=head3 hoh
 
 =over
+
+example input:
+
+   h1,h2,h3
+   l,m,n
+   p,q,r
 
 example data structure (assuming a C<key> of C<'h2,h3'>):
 
