@@ -1,7 +1,7 @@
 use warnings;
 use strict;
 
-use Test::More tests => 8;
+use Test::More tests => 10;
 
 use Text::xSV::Slurp;
 
@@ -148,10 +148,28 @@ eval { xsv_slurp( string => "a,b\n1,1\n1,1\n", shape => 'hoh', key => 'a', agg =
 
 my $err = $@;
 
-like( $err, qr/\AError: key collision in HoH construction \(key-value path was: { 'a' => '1' }\)/, 'fatal agg' );
+like( $err, qr/\AError: key collision in HoH construction \(key-value path was: { 'a' => '1' }\)/, 'die agg' );
 
 eval { xsv_slurp( string => "a,b\n1,1\n", shape => 'hoh', key => 'a', agg => 'die' ) };
 
 $err = $@;
 
-ok( ! $err, 'fatal agg - no collision' );
+ok( ! $err, 'die agg - no collision' );
+
+{
+
+   my $warning;
+
+   local $SIG{__WARN__} = sub { ($warning) = @_ };
+   
+   xsv_slurp( string => "a,b\n1,1\n1,1\n", shape => 'hoh', key => 'a', agg => 'warn' );
+   
+   like( $warning, qr/\AError: key collision in HoH construction \(key-value path was: { 'a' => '1' }\)/, 'warn agg' );
+   
+   undef $warning;
+   
+   xsv_slurp( string => "a,b\n1,1\n", shape => 'hoh', key => 'a', agg => 'warn' );
+
+   ok( ! $warning, 'warn agg - no collision' );
+   
+}

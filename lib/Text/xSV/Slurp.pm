@@ -838,10 +838,6 @@ Dan Boorstein, C<< <dan at boorstein.net> >>
 
 =item * add average, weighted-average and count agg keys and tests
 
-=item * add test for warn agg key
-
-=item * die and warn agg keys should include the value path in the output
-
 =item * document hoh 'agg' predefined keys
 
 =item * document hoh 'agg' custom keys
