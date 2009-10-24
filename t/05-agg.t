@@ -148,7 +148,7 @@ eval { xsv_slurp( string => "a,b\n1,1\n1,1\n", shape => 'hoh', key => 'a', agg =
 
 my $err = $@;
 
-like( $err, qr/\AError: key collision/, 'fatal agg' );
+like( $err, qr/\AError: key collision in HoH construction \(key-value path was: { 'a' => '1' }\)/, 'fatal agg' );
 
 eval { xsv_slurp( string => "a,b\n1,1\n", shape => 'hoh', key => 'a', agg => 'die' ) };
 

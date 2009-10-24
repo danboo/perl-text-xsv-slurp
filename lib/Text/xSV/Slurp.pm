@@ -597,7 +597,10 @@ my %predefined_aggs =
       my %opts = @_;
       if ( defined $opts{old_value} )
          {
-         confess "Error: key collision in HoH construction";
+         my @kv_pairs   = @{ $opts{key_value_path} };
+         my @kv_strings = map { "{ '$_->[0]' => '$_->[1]' }" } @kv_pairs;
+         my $kv_path    = join ', ', @kv_strings;
+         confess "Error: key collision in HoH construction (key-value path was: $kv_path)";
          }
       },
 
@@ -607,7 +610,10 @@ my %predefined_aggs =
       my %opts = @_;
       if ( defined $opts{old_value} )
          {
-         cluck "Warning: key collision in HoH construction";
+         my @kv_pairs   = @{ $opts{key_value_path} };
+         my @kv_strings = map { "{ '$_->[0]' => '$_->[1]' }" } @kv_pairs;
+         my $kv_path    = join ', ', @kv_strings;
+         cluck "Error: key collision in HoH construction (key-value path was: $kv_path)";
          }
       },
 
@@ -738,12 +744,16 @@ sub _as_hoh
          ## step through the nested keys
          my $leaf = \%hoh;
          
+         my @val;
+         
          for my $k ( @key )
             {
             
             my $v         = $line{$k};
             $leaf->{$v} ||= {};
             $leaf         = $leaf->{$v};
+            
+            push @val, $v;
             
             }
          
@@ -768,11 +778,12 @@ sub _as_hoh
                {
                
                $new_value = $agg->(
-                  key       => $key,
-                  old_value => $leaf->{$key},
-                  new_value => $new_value,
-                  line_hash => \%line,
-                  hoh       => \%hoh,
+                  key            => $key,
+                  key_value_path => [ map [ $key[$_] => $val[$_] ], 0 .. $#key ],
+                  old_value      => $leaf->{$key},
+                  new_value      => $new_value,
+                  line_hash      => \%line,
+                  hoh            => \%hoh,
                   );
 
                }
