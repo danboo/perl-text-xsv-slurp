@@ -130,7 +130,7 @@ EOIN
       },
       
    opts =>
-      { shape => 'hoh', key => 'a,c', agg => sub { return ( $_[2] || 0 ) + 1 } },
+      { shape => 'hoh', key => 'a,c', agg => sub { my %o = @_; return ( $o{old_value} || 0 ) + 1 } },
 
    },
 

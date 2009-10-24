@@ -587,15 +587,15 @@ my %predefined_aggs =
    ## assign
    'assign' =>  sub
       {
-      my ( $key, $nval, $oval, $line, $hoh, $scratch ) = @_;
-      return $nval;
+      my %opts = @_;
+      return $opts{new_value};
       },
 
    ## die
    'die' =>  sub
       {
-      my ( $key, $nval, $oval, $line, $hoh, $scratch ) = @_;
-      if ( defined $oval )
+      my %opts = @_;
+      if ( defined $opts{old_value} )
          {
          confess "Error: key collision in HoH construction";
          }
@@ -604,8 +604,8 @@ my %predefined_aggs =
    ## warn
    'warn' =>  sub
       {
-      my ( $key, $nval, $oval, $line, $hoh, $scratch ) = @_;
-      if ( defined $oval )
+      my %opts = @_;
+      if ( defined $opts{old_value} )
          {
          cluck "Warning: key collision in HoH construction";
          }
@@ -614,34 +614,34 @@ my %predefined_aggs =
    ## sum
    'sum' =>  sub
       {
-      my ( $key, $nval, $oval, $line, $hoh, $scratch ) = @_;
-      return ( $oval || 0 ) + ( $nval || 0 );
+      my %opts = @_;
+      return ( $opts{old_value} || 0 ) + ( $opts{new_value} || 0 );
       },
 
    ## push to array
    'push' =>  sub
       {
-      my ( $key, $nval, $oval, $line, $hoh, $scratch ) = @_;
-      my $ref = $oval || [];
-      push @{ $ref }, $nval; 
+      my %opts = @_;
+      my $ref = $opts{old_value} || [];
+      push @{ $ref }, $opts{new_value}; 
       return $ref;
       },
 
    ## unshift to array
    'unshift' =>  sub
       {
-      my ( $key, $nval, $oval, $line, $hoh, $scratch ) = @_;
-      my $ref = $oval || [];
-      unshift @{ $ref }, $nval; 
+      my %opts = @_;
+      my $ref = $opts{old_value} || [];
+      unshift @{ $ref }, $opts{new_value}; 
       return $ref;
       },
 
    ## value histogram
    'frequency' =>  sub
       {
-      my ( $key, $nval, $oval, $line, $hoh, $scratch ) = @_;
-      my $ref = $oval || {};
-      $ref->{$nval} ++;
+      my %opts = @_;
+      my $ref = $opts{old_value} || {};
+      $ref->{$opts{new_value}} ++;
       return $ref;
       },
    
@@ -767,7 +767,13 @@ sub _as_hoh
             if ( $agg )
                {
                
-               $new_value = $agg->( $key, $new_value, $leaf->{$key}, \%line, \%hoh );
+               $new_value = $agg->(
+                  key       => $key,
+                  old_value => $leaf->{$key},
+                  new_value => $new_value,
+                  line_hash => \%line,
+                  hoh       => \%hoh,
+                  );
 
                }
 
