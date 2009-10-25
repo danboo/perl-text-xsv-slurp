@@ -581,7 +581,6 @@ sub _as_hoa
 my %collide =
    (
    
-   ## average
    ## weighted-average
    
    ## assign
@@ -596,6 +595,15 @@ my %collide =
       {
       my %opts = @_;
       return ( $opts{old_value} || 0 ) + 1;
+      },
+
+   ## average
+   'average' =>  sub
+      {
+      my %opts = @_;
+      $opts{'scratch_pad'}{'count'}++;
+      $opts{'scratch_pad'}{'sum'} += $opts{new_value};
+      return $opts{'scratch_pad'}{'sum'} / $opts{'scratch_pad'}{'count'};
       },
 
    ## die
@@ -730,6 +738,9 @@ sub _as_hoh
          $key_collide_actions{$header} = $collide;
             
          }
+         
+      ## per-header scratch-pads used in collision functions
+      my %scratch_pads = map { $_ => {} } @headers;
 
       while ( my $line = <$handle> )
          {
@@ -793,6 +804,7 @@ sub _as_hoh
                   new_value      => $new_value,
                   line_hash      => \%line,
                   hoh            => \%hoh,
+                  scratch_pad    => $scratch_pads{$key},
                   );
 
                }
@@ -843,7 +855,7 @@ Dan Boorstein, C<< <dan at boorstein.net> >>
 
 =over
 
-=item * add average and weighted-average collide keys and tests
+=item * add weighted-average collide keys and tests
 
 =item * document hoh 'on_collide/on_collide_by_key' predefined keys
 
