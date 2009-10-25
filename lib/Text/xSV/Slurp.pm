@@ -710,7 +710,7 @@ my %collide =
    'count' =>  sub
       {
       my %opts = @_;
-      return ( $opts{old_value} || 0 ) + 1;
+      return ( $opts{old_value} || 1 ) + 1;
       },
 
    ## average
@@ -761,7 +761,9 @@ my %collide =
    'push' =>  sub
       {
       my %opts = @_;
-      my $ref = $opts{old_value} || [];
+      my $ref = defined $opts{old_value} && ref $opts{old_value}
+              ? $opts{old_value}
+              : [ $opts{old_value} ];
       push @{ $ref }, $opts{new_value}; 
       return $ref;
       },
@@ -770,7 +772,9 @@ my %collide =
    'unshift' =>  sub
       {
       my %opts = @_;
-      my $ref = $opts{old_value} || [];
+      my $ref = defined $opts{old_value} && ref $opts{old_value}
+              ? $opts{old_value}
+              : [ $opts{old_value} ];
       unshift @{ $ref }, $opts{new_value}; 
       return $ref;
       },
@@ -779,8 +783,10 @@ my %collide =
    'frequency' =>  sub
       {
       my %opts = @_;
-      my $ref = $opts{old_value} || {};
-      $ref->{$opts{new_value}} ++;
+      my $ref = defined $opts{old_value} && ref $opts{old_value}
+              ? $opts{old_value}
+              : { $opts{old_value} => 1 };
+      $ref->{ $opts{new_value} } ++;
       return $ref;
       },
    
@@ -912,7 +918,7 @@ sub _as_hoh
 
             my $collide = $key_collide_actions{$key};
 
-            if ( $collide )
+            if ( $collide && exists $leaf->{$key} )
                {
                
                $new_value = $collide->(
@@ -972,6 +978,9 @@ Dan Boorstein, C<< <dan at boorstein.net> >>
 =head1 TODO
 
 =over
+
+=item * on_collide does not work for counting since it will result in the
+        stored value when there is no subsequent collision, change to on_store
 
 =item * should warn/die on_collide handlers be &-able with other handlers,
         allowing a particular fallback when no collision occurs
