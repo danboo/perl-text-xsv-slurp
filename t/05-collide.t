@@ -10,7 +10,7 @@ my @tests =
 
    {
    
-   id => 'no agg',
+   id => 'no collide',
 
    in => <<EOIN,
 a,b,c
@@ -30,7 +30,7 @@ EOIN
 
    {
    
-   id => 'assign agg',
+   id => 'assign collide',
 
    in => <<EOIN,
 a,b,c
@@ -44,13 +44,13 @@ EOIN
       },
       
    opts =>
-      { shape => 'hoh', key => 'a,c', agg => 'assign' },
+      { shape => 'hoh', key => 'a,c', on_collide => 'assign' },
 
    },
 
    {
    
-   id => 'array agg',
+   id => 'array collide',
 
    in => <<EOIN,
 a,b,c
@@ -64,13 +64,13 @@ EOIN
       },
       
    opts =>
-      { shape => 'hoh', key => 'a,c', agg => 'push' },
+      { shape => 'hoh', key => 'a,c', on_collide => 'push' },
 
    },
 
    {
    
-   id => 'sum agg',
+   id => 'sum collide',
 
    in => <<EOIN,
 a,b,c
@@ -84,13 +84,13 @@ EOIN
       },
       
    opts =>
-      { shape => 'hoh', key => 'a,c', agg => 'sum' },
+      { shape => 'hoh', key => 'a,c', on_collide => 'sum' },
 
    },
 
    {
    
-   id => 'hash histogram agg',
+   id => 'hash histogram collide',
 
    in => <<EOIN,
 a,b,c
@@ -107,13 +107,13 @@ EOIN
       },
       
    opts =>
-      { shape => 'hoh', key => 'a,c', agg => 'frequency' },
+      { shape => 'hoh', key => 'a,c', on_collide => 'frequency' },
 
    },
 
    {
    
-   id => 'custom count agg',
+   id => 'custom count collide',
 
    in => <<EOIN,
 a,b,c
@@ -130,7 +130,7 @@ EOIN
       },
       
    opts =>
-      { shape => 'hoh', key => 'a,c', agg => sub { my %o = @_; return ( $o{old_value} || 0 ) + 1 } },
+      { shape => 'hoh', key => 'a,c', on_collide => sub { my %o = @_; return ( $o{old_value} || 0 ) + 1 } },
 
    },
 
@@ -144,17 +144,17 @@ for my $test ( @tests )
    is_deeply($got, $exp, $id);
    }
 
-eval { xsv_slurp( string => "a,b\n1,1\n1,1\n", shape => 'hoh', key => 'a', agg => 'die' ) };
+eval { xsv_slurp( string => "a,b\n1,1\n1,1\n", shape => 'hoh', key => 'a', on_collide => 'die' ) };
 
 my $err = $@;
 
-like( $err, qr/\AError: key collision in HoH construction \(key-value path was: { 'a' => '1' }\)/, 'die agg' );
+like( $err, qr/\AError: key collision in HoH construction \(key-value path was: { 'a' => '1' }\)/, 'die collide' );
 
-eval { xsv_slurp( string => "a,b\n1,1\n", shape => 'hoh', key => 'a', agg => 'die' ) };
+eval { xsv_slurp( string => "a,b\n1,1\n", shape => 'hoh', key => 'a', on_collide => 'die' ) };
 
 $err = $@;
 
-ok( ! $err, 'die agg - no collision' );
+ok( ! $err, 'die collide - no collision' );
 
 {
 
@@ -162,14 +162,14 @@ ok( ! $err, 'die agg - no collision' );
 
    local $SIG{__WARN__} = sub { ($warning) = @_ };
    
-   xsv_slurp( string => "a,b\n1,1\n1,1\n", shape => 'hoh', key => 'a', agg => 'warn' );
+   xsv_slurp( string => "a,b\n1,1\n1,1\n", shape => 'hoh', key => 'a', on_collide => 'warn' );
    
-   like( $warning, qr/\AError: key collision in HoH construction \(key-value path was: { 'a' => '1' }\)/, 'warn agg' );
+   like( $warning, qr/\AError: key collision in HoH construction \(key-value path was: { 'a' => '1' }\)/, 'warn collide' );
    
    undef $warning;
    
-   xsv_slurp( string => "a,b\n1,1\n", shape => 'hoh', key => 'a', agg => 'warn' );
+   xsv_slurp( string => "a,b\n1,1\n", shape => 'hoh', key => 'a', on_collide => 'warn' );
 
-   ok( ! $warning, 'warn agg - no collision' );
+   ok( ! $warning, 'warn collide - no collision' );
    
 }

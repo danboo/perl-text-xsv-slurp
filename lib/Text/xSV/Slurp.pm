@@ -578,7 +578,7 @@ sub _as_hoa
    }   
 
 ## predefined methods for handling hoh collisions
-my %predefined_aggs =
+my %collide =
    (
    
    ## average
@@ -706,17 +706,17 @@ sub _as_hoh
 
       ## set the aggregation method for each header. currently this is global,
       ## but will eventually be per header.
-      my %agg_actions;
+      my %key_collide_actions;
 
-      if ( $o->{'agg'} )
+      if ( $o->{'on_collide'} )
          {
 
-         my $agg = $predefined_aggs{ $o->{'agg'} } || $o->{'agg'};
+         my $collide = $collide{ $o->{'on_collide'} } || $o->{'on_collide'};
 
          for my $header ( @headers )
             {
 
-            $agg_actions{$header} = $agg;
+            $key_collide_actions{$header} = $collide;
                
             }
 
@@ -772,12 +772,12 @@ sub _as_hoh
 
             my $new_value = $line{$key};
 
-            my $agg = $agg_actions{$key};
+            my $collide = $key_collide_actions{$key};
 
-            if ( $agg )
+            if ( $collide )
                {
                
-               $new_value = $agg->(
+               $new_value = $collide->(
                   key            => $key,
                   key_value_path => [ map [ $key[$_] => $val[$_] ], 0 .. $#key ],
                   old_value      => $leaf->{$key},
@@ -834,15 +834,15 @@ Dan Boorstein, C<< <dan at boorstein.net> >>
 
 =over
 
-=item * agg specific actions by key
+=item * handle collisions by key
 
-=item * add average, weighted-average and count agg keys and tests
+=item * add average, weighted-average and count collide keys and tests
 
-=item * document hoh 'agg' predefined keys
+=item * document hoh 'on_collide' predefined keys
 
-=item * document hoh 'agg' custom keys
+=item * document hoh 'on_collide' custom keys
 
-=item * add a recipes/examples section to cover grep and agg examples
+=item * add a recipes/examples section to cover grep and on_collide examples
 
 =back
 
