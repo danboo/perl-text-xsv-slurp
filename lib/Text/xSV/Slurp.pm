@@ -581,6 +581,7 @@ sub _as_hoa
 my %collide =
    (
    
+   ## count
    ## average
    ## weighted-average
    
@@ -704,22 +705,24 @@ sub _as_hoh
 
          }
 
-      ## set the aggregation method for each header. currently this is global,
-      ## but will eventually be per header.
+      ## set the on_collide handler at the default level and by header
       my %key_collide_actions;
+      
 
-      if ( $o->{'on_collide'} )
+      for my $header ( @headers )
          {
+         
+         ## determine the default handler if given
+         my $collide = $o->{'on_collide'} && ( $collide{ $o->{'on_collide'} } || $o->{'on_collide'} );
 
-         my $collide = $collide{ $o->{'on_collide'} } || $o->{'on_collide'};
-
-         for my $header ( @headers )
+         ## set the per-header handler if given
+         if ( my $by_key_collide = $o->{'on_collide_by_key'}{$header} )
             {
-
-            $key_collide_actions{$header} = $collide;
-               
+            $collide = $collide{ $by_key_collide } || $by_key_collide;
             }
 
+         $key_collide_actions{$header} = $collide;
+            
          }
 
       while ( my $line = <$handle> )
