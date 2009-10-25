@@ -1,7 +1,7 @@
 use warnings;
 use strict;
 
-use Test::More tests => 13;
+use Test::More tests => 14;
 
 use Text::xSV::Slurp;
 
@@ -108,6 +108,29 @@ EOIN
       
    opts =>
       { shape => 'hoh', key => 'a,c', on_collide => 'frequency' },
+
+   },
+
+   {
+   
+   id => 'count collide',
+
+   in => <<EOIN,
+a,b,c
+1,2,3
+1,2,3
+1,2,3
+1,2,3
+1,2,3
+EOIN
+
+   exp => 
+      {
+      1 => { 3 => { b => 5 } },
+      },
+      
+   opts =>
+      { shape => 'hoh', key => 'a,c', on_collide => 'count' },
 
    },
 

@@ -581,7 +581,6 @@ sub _as_hoa
 my %collide =
    (
    
-   ## count
    ## average
    ## weighted-average
    
@@ -590,6 +589,13 @@ my %collide =
       {
       my %opts = @_;
       return $opts{new_value};
+      },
+
+   ## count
+   'count' =>  sub
+      {
+      my %opts = @_;
+      return ( $opts{old_value} || 0 ) + 1;
       },
 
    ## die
@@ -643,7 +649,7 @@ my %collide =
       return $ref;
       },
 
-   ## value histogram
+   ## value histogram (count occurences of each value)
    'frequency' =>  sub
       {
       my %opts = @_;
@@ -837,7 +843,7 @@ Dan Boorstein, C<< <dan at boorstein.net> >>
 
 =over
 
-=item * add average, weighted-average and count collide keys and tests
+=item * add average and weighted-average collide keys and tests
 
 =item * document hoh 'on_collide/on_collide_by_key' predefined keys
 
