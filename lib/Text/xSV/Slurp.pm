@@ -318,6 +318,108 @@ full example:
 
 =back
 
+=head1 HoH collision handlers
+
+Using the C<hoh> shape can result in value collisions when the C<key> does not
+guarantee unique combinations. The default action is to simply assign the values
+to the given slot as they are encountered, resulting in the last seen value
+surviving.
+
+Consider this dataset:
+
+
+In this example, using C<h1,h2> as the indexing key with the default collision
+handler:
+
+   $xsv_data = <<EOXSV;
+   h1,h2,h3
+   a,b,c
+   a,b,d
+   EOXSV
+
+   $hoh = xsv_slurp( string => $xsv_data,
+                     shape  => 'hoh',
+                     key    => 'h1,h2'
+                   );
+   
+would result in the value of C<c> being lost:
+
+   {
+      a => { b => d },
+   }
+
+Typically this is not very useful. The user probably wanted to aggregate the
+values in some way. This is where the C<on_collide> handlers come in, allowing
+the caller to specify how collisions should be handled for each available
+header.
+
+=head2 builtin handlers
+
+A number of builtin C<on_collide> handlers are provided and can be specified
+by name.
+
+The example data structures below use the following data.
+
+   h1,h2,h3
+   1,2,3
+   1,2,5
+
+=head3 assign
+
+Store the value, losing prior values. This is the default behavior.
+
+   { 1 => { 2 => 5 } }
+
+=head3 sum
+
+Sum the values.
+
+   { 1 => { 2 => 8 } }
+
+=head3 average
+
+Average the values.
+
+   { 1 => { 2 => 4 } }
+
+=head3 count
+
+Count the collisions.
+
+   { 1 => { 2 => 2 } }
+
+=head3 frequency
+
+Create a frequency count of values.
+
+   { 1 => { 2 => { 3 => 1, 5 => 1 } } }
+
+=head3 die
+
+Carp::confess if a collision occurs.
+
+   Error: key collision in HoH construction (key-value path was: { 'h1' => '1' }, { 'h2' => '2' })
+
+=head3 warn
+
+Carp::cluck if a collision occurs.
+
+   Warning: key collision in HoH construction (key-value path was: { 'h1' => '1' }, { 'h2' => '2' })
+
+=head3 push
+
+C<push> values onto an array.
+
+   { 1 => { 2 => [ 3, 5 ] } }
+
+=head3 unshift
+
+C<unshift> values onto an array.
+
+   { 1 => { 2 => [ 5, 3 ] } }
+
+=head2 custom handlers
+
 =cut
 
 my %shape_map =
@@ -628,7 +730,7 @@ my %collide =
          my @kv_pairs   = @{ $opts{key_value_path} };
          my @kv_strings = map { "{ '$_->[0]' => '$_->[1]' }" } @kv_pairs;
          my $kv_path    = join ', ', @kv_strings;
-         cluck "Error: key collision in HoH construction (key-value path was: $kv_path)";
+         cluck "Warning: key collision in HoH construction (key-value path was: $kv_path)";
          }
       },
 

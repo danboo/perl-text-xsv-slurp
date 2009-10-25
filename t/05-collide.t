@@ -279,7 +279,7 @@ ok( ! $err, 'die collide - no collision' );
    
    xsv_slurp( string => "a,b\n1,1\n1,1\n", shape => 'hoh', key => 'a', on_collide => 'warn' );
    
-   like( $warning, qr/\AError: key collision in HoH construction \(key-value path was: { 'a' => '1' }\)/, 'warn collide' );
+   like( $warning, qr/\AWarning: key collision in HoH construction \(key-value path was: { 'a' => '1' }\)/, 'warn collide' );
    
    undef $warning;
    
