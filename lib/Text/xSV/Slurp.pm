@@ -837,13 +837,13 @@ Dan Boorstein, C<< <dan at boorstein.net> >>
 
 =over
 
-=item * handle collisions by key
-
 =item * add average, weighted-average and count collide keys and tests
 
-=item * document hoh 'on_collide' predefined keys
+=item * document hoh 'on_collide/on_collide_by_key' predefined keys
 
-=item * document hoh 'on_collide' custom keys
+=item * document hoh 'on_collide/on_collide_by_key' custom keys
+
+=item * should on_collide accept a hash ref of header-specific actions?
 
 =item * add a recipes/examples section to cover grep and on_collide examples
 
