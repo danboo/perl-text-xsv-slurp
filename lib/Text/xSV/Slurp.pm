@@ -293,6 +293,9 @@ shape specifics:
                       should return true or false whether the row should be
                       included or not
 
+=item * C<on_collide> - specify how key collisions should be handled (see
+                        L</HoH collision handlers>)
+
 =back
 
 full example:
@@ -321,20 +324,17 @@ full example:
 =head1 HoH collision handlers
 
 Using the C<hoh> shape can result in value collisions when the C<key> does not
-guarantee unique combinations. The default action is to simply assign the values
-to the given slot as they are encountered, resulting in the last seen value
-surviving.
-
-Consider this dataset:
-
+guarantee unique value combinations. The default action is to simply assign the
+values to the given slot as they are encountered, resulting in the last seen
+value surviving.
 
 In this example, using C<h1,h2> as the indexing key with the default collision
 handler:
 
    $xsv_data = <<EOXSV;
    h1,h2,h3
-   a,b,c
-   a,b,d
+   1,2,3
+   1,2,5
    EOXSV
 
    $hoh = xsv_slurp( string => $xsv_data,
@@ -342,16 +342,30 @@ handler:
                      key    => 'h1,h2'
                    );
    
-would result in the value of C<c> being lost:
+would result in the value of C<3> being lost:
 
    {
-      a => { b => d },
+      1 => { 2 => 5 },  ## 3 sir!
    }
 
 Typically this is not very useful. The user probably wanted to aggregate the
 values in some way. This is where the C<on_collide> handlers come in, allowing
 the caller to specify how collisions should be handled for each available
 header.
+
+Using one of the builtin named handlers, this might look like:
+
+   $hoh = xsv_slurp( string     => $xsv_data,
+                     shape      => 'hoh',
+                     key        => 'h1,h2',
+                     on_collide => 'sum',
+                   );
+                   
+resulting in the summation of the values:
+
+   {
+      1 => { 2 => 8 },
+   }
 
 =head2 builtin handlers
 
@@ -719,6 +733,7 @@ my %collide =
          my $kv_path    = join ', ', @kv_strings;
          confess "Error: key collision in HoH construction (key-value path was: $kv_path)";
          }
+      return $opts{new_value};
       },
 
    ## warn
@@ -732,6 +747,7 @@ my %collide =
          my $kv_path    = join ', ', @kv_strings;
          cluck "Warning: key collision in HoH construction (key-value path was: $kv_path)";
          }
+      return $opts{new_value};
       },
 
    ## sum
@@ -956,6 +972,9 @@ Dan Boorstein, C<< <dan at boorstein.net> >>
 =head1 TODO
 
 =over
+
+=item * should warn/die on_collide handlers be &-able with other handlers,
+        allowing a particular fallback when no collision occurs
 
 =item * add weighted-average collide keys and tests
 

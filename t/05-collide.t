@@ -1,7 +1,7 @@
 use warnings;
 use strict;
 
-use Test::More tests => 15;
+use Test::More tests => 19;
 
 use Text::xSV::Slurp;
 
@@ -259,17 +259,21 @@ for my $test ( @tests )
    is_deeply($got, $exp, $id);
    }
 
-eval { xsv_slurp( string => "a,b\n1,1\n1,1\n", shape => 'hoh', key => 'a', on_collide => 'die' ) };
+my $got = eval { xsv_slurp( string => "a,b\n1,1\n1,1\n", shape => 'hoh', key => 'a', on_collide => 'die' ) };
 
 my $err = $@;
 
 like( $err, qr/\AError: key collision in HoH construction \(key-value path was: { 'a' => '1' }\)/, 'die collide' );
 
-eval { xsv_slurp( string => "a,b\n1,1\n", shape => 'hoh', key => 'a', on_collide => 'die' ) };
+ok( ! $got, 'die collide - return' );
+
+$got = eval { xsv_slurp( string => "a,b\n1,1\n", shape => 'hoh', key => 'a', on_collide => 'die' ) };
 
 $err = $@;
 
 ok( ! $err, 'die collide - no collision' );
+
+is_deeply($got, { 1 => { b => 1 } }, 'die collide - no collision return');
 
 {
 
@@ -277,15 +281,19 @@ ok( ! $err, 'die collide - no collision' );
 
    local $SIG{__WARN__} = sub { ($warning) = @_ };
    
-   xsv_slurp( string => "a,b\n1,1\n1,1\n", shape => 'hoh', key => 'a', on_collide => 'warn' );
+   my $got = xsv_slurp( string => "a,b\n1,1\n1,1\n", shape => 'hoh', key => 'a', on_collide => 'warn' );
    
    like( $warning, qr/\AWarning: key collision in HoH construction \(key-value path was: { 'a' => '1' }\)/, 'warn collide' );
    
+   is_deeply($got, { 1 => { b => 1 } }, 'warn collide - return');
+   
    undef $warning;
    
-   xsv_slurp( string => "a,b\n1,1\n", shape => 'hoh', key => 'a', on_collide => 'warn' );
+   $got = xsv_slurp( string => "a,b\n1,1\n", shape => 'hoh', key => 'a', on_collide => 'warn' );
 
    ok( ! $warning, 'warn collide - no collision' );
    
+   is_deeply($got, { 1 => { b => 1 } }, 'warn collide - no collision return');
+
 }
 
