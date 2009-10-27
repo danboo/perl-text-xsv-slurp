@@ -1,7 +1,7 @@
 use warnings;
 use strict;
 
-use Test::More tests => 20;
+use Test::More tests => 19;
 
 use Text::xSV::Slurp;
 
@@ -25,26 +25,6 @@ EOIN
       
    opts =>
       { shape => 'hoh', key => 'a,c' },
-
-   },
-
-   {
-   
-   id => 'assign collide',
-
-   in => <<EOIN,
-a,b,c
-1,2,3
-1,2,3
-EOIN
-
-   exp => 
-      {
-      1 => { 3 => { b => 2 } },
-      },
-      
-   opts =>
-      { shape => 'hoh', key => 'a,c', on_collide => 'assign' },
 
    },
 

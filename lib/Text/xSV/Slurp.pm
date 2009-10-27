@@ -321,12 +321,11 @@ full example:
 
 =back
 
-=head1 HoH collision handlers
+=head1 HoH storage handlers
 
-Using the C<hoh> shape can result in value collisions when the C<key> does not
-guarantee unique value combinations. The default action is to simply assign the
-values to the given slot as they are encountered, resulting in the last seen
-value surviving.
+Using the C<hoh> shape can result non-unique C<key> combinations. The default
+action is to simply assign the values to the given slot as they are encountered,
+resulting in the last seen value surviving.
 
 In this example, using C<h1,h2> as the indexing key with the default collision
 handler:
@@ -349,9 +348,12 @@ would result in the value of C<3> being lost:
    }
 
 Typically this is not very useful. The user probably wanted to aggregate the
-values in some way. This is where the C<on_collide> handlers come in, allowing
-the caller to specify how collisions should be handled for each available
-header.
+values in some way. This is where the C<on_collide> and C<on_store> handlers
+come in, allowing the caller to specify how these assignments should be
+handled.
+
+The C<on_collide> handler is only called when a collision is encountered, while
+the C<on_store> handler is called for each assignment. 
 
 Using one of the builtin named handlers, this might look like:
 
@@ -367,7 +369,7 @@ resulting in the summation of the values:
       1 => { 2 => 8 },
    }
 
-=head2 builtin handlers
+=head2 builtin C<on_collide> handlers
 
 A number of builtin C<on_collide> handlers are provided and can be specified
 by name.
@@ -377,12 +379,6 @@ The example data structures below use the following data.
    h1,h2,h3
    1,2,3
    1,2,5
-
-=head3 assign
-
-Store the value, losing prior values. This is the default behavior.
-
-   { 1 => { 2 => 5 } }
 
 =head3 sum
 
@@ -396,17 +392,17 @@ Average the values.
 
    { 1 => { 2 => 4 } }
 
-=head3 count
+=head3 push
 
-Count the collisions.
+C<push> values onto an array *only on colliding*.
 
-   { 1 => { 2 => 2 } }
+   { 1 => { 2 => [ 3, 5 ] } }
 
-=head3 frequency
+=head3 unshift
 
-Create a frequency count of values.
+C<unshift> values onto an array *only on colliding*.
 
-   { 1 => { 2 => { 3 => 1, 5 => 1 } } }
+   { 1 => { 2 => [ 5, 3 ] } }
 
 =head3 die
 
@@ -420,15 +416,29 @@ Carp::cluck if a collision occurs.
 
    Warning: key collision in HoH construction (key-value path was: { 'h1' => '1' }, { 'h2' => '2' })
 
+=head2 builtin C<on_store> handlers
+
+=head3 count
+
+Count the times a key occurs.
+
+   { 1 => { 2 => 2 } }
+
+=head3 frequency
+
+Create a frequency count of values.
+
+   { 1 => { 2 => { 3 => 1, 5 => 1 } } }
+
 =head3 push
 
-C<push> values onto an array.
+C<push> values onto an array *always*.
 
    { 1 => { 2 => [ 3, 5 ] } }
 
 =head3 unshift
 
-C<unshift> values onto an array.
+C<unshift> values onto an array *always*.
 
    { 1 => { 2 => [ 5, 3 ] } }
 
@@ -691,7 +701,47 @@ sub _as_hoa
       }
 
    return \%hoa;
-   }   
+   }
+   
+## predefined methods for handling hoh storage
+my %store =
+   (
+
+   ## count
+   'count' =>  sub
+      {
+      my %opts = @_;
+      return ( $opts{old_value} || 1 ) + 1;
+      },
+
+   ## value histogram (count occurences of each value)
+   'frequency' =>  sub
+      {
+      my %opts = @_;
+      my $ref = $opts{old_value} || {};
+      $ref->{ $opts{new_value} } ++;
+      return $ref;
+      },
+   
+   ## push to array
+   'push' =>  sub
+      {
+      my %opts = @_;
+      my $ref = $opts{old_value} || [];
+      push @{ $ref }, $opts{new_value}; 
+      return $ref;
+      },
+
+   ## unshift to array
+   'unshift' =>  sub
+      {
+      my %opts = @_;
+      my $ref = $opts{old_value} || [];
+      unshift @{ $ref }, $opts{new_value}; 
+      return $ref;
+      },
+
+   );   
 
 ## predefined methods for handling hoh collisions
 my %collide =
@@ -699,18 +749,11 @@ my %collide =
    
    ## weighted-average
    
-   ## assign
-   'assign' =>  sub
+   ## sum
+   'sum' =>  sub
       {
       my %opts = @_;
-      return $opts{new_value};
-      },
-
-   ## count
-   'count' =>  sub
-      {
-      my %opts = @_;
-      return ( $opts{old_value} || 1 ) + 1;
+      return ( $opts{old_value} || 0 ) + ( $opts{new_value} || 0 );
       },
 
    ## average
@@ -733,7 +776,6 @@ my %collide =
          my $kv_path    = join ', ', @kv_strings;
          confess "Error: key collision in HoH construction (key-value path was: $kv_path)";
          }
-      return $opts{new_value};
       },
 
    ## warn
@@ -750,18 +792,11 @@ my %collide =
       return $opts{new_value};
       },
 
-   ## sum
-   'sum' =>  sub
-      {
-      my %opts = @_;
-      return ( $opts{old_value} || 0 ) + ( $opts{new_value} || 0 );
-      },
-
    ## push to array
    'push' =>  sub
       {
       my %opts = @_;
-      my $ref = defined $opts{old_value} && ref $opts{old_value}
+      my $ref = ref $opts{old_value}
               ? $opts{old_value}
               : [ $opts{old_value} ];
       push @{ $ref }, $opts{new_value}; 
@@ -772,24 +807,13 @@ my %collide =
    'unshift' =>  sub
       {
       my %opts = @_;
-      my $ref = defined $opts{old_value} && ref $opts{old_value}
+      my $ref = ref $opts{old_value}
               ? $opts{old_value}
               : [ $opts{old_value} ];
       unshift @{ $ref }, $opts{new_value}; 
       return $ref;
       },
 
-   ## value histogram (count occurences of each value)
-   'frequency' =>  sub
-      {
-      my %opts = @_;
-      my $ref = defined $opts{old_value} && ref $opts{old_value}
-              ? $opts{old_value}
-              : { $opts{old_value} => 1 };
-      $ref->{ $opts{new_value} } ++;
-      return $ref;
-      },
-   
    );
 
 ## arguments:
@@ -844,23 +868,29 @@ sub _as_hoh
          }
 
       ## set the on_collide handler at the default level and by header
-      my %key_collide_actions;
-      
+      my %storage_handlers;
 
       for my $header ( @headers )
          {
          
-         ## determine the default handler if given
-         my $collide = $o->{'on_collide'} && ( $collide{ $o->{'on_collide'} } || $o->{'on_collide'} );
-
-         ## set the per-header handler if given
-         if ( my $by_key_collide = $o->{'on_collide_by_key'}{$header} )
+         for my $type ( qw/ on_store on_collide / )
             {
-            $collide = $collide{ $by_key_collide } || $by_key_collide;
+            
+            my $handler = $o->{$type}
+                        ? ref $o->{$type}
+                        ? $o->{$type}{$header}
+                        : $o->{$type}
+                        : undef;
+                        
+            next if ! $handler;
+                        
+            confess "Error: cannot set multiple storage handlers for '$header'"
+               if $storage_handlers{$header};
+
+            $storage_handlers{$header}{$type} = $handler;
+            
             }
 
-         $key_collide_actions{$header} = $collide;
-            
          }
          
       ## per-header scratch-pads used in collision functions
@@ -916,12 +946,15 @@ sub _as_hoh
 
             my $new_value = $line{$key};
 
-            my $collide = $key_collide_actions{$key};
+            my $on_collide = $storage_handlers{$key}{'on_collide'};
+            my $on_store   = $storage_handlers{$key}{'on_store'};
+            
+            my $handler    = $on_collide || $on_store;
 
-            if ( $collide && exists $leaf->{$key} )
+            if ( $on_store || $on_collide && exists $leaf->{$key} )
                {
                
-               $new_value = $collide->(
+               $new_value = $handler->(
                   key            => $key,
                   key_value_path => [ map [ $key[$_] => $val[$_] ], 0 .. $#key ],
                   old_value      => $leaf->{$key},
