@@ -17,11 +17,11 @@ Text::xSV::Slurp - Convert xSV data to common data shapes.
 
 =head1 VERSION
 
-Version 0.12
+Version 0.20
 
 =cut
 
-our $VERSION = '0.12';
+our $VERSION = '0.20';
 
 =head1 SYNOPSIS
 
