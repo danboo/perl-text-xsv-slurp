@@ -714,7 +714,7 @@ my %named_handlers =
       'count' =>  sub
          {
          my %opts = @_;
-         return ( $opts{old_value} || 1 ) + 1;
+         return ( $opts{old_value} || 0 ) + 1;
          },
 
       ## value histogram (count occurences of each value)
