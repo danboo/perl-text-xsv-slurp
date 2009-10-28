@@ -702,116 +702,119 @@ sub _as_hoa
 
    return \%hoa;
    }
+
+my %named_handlers =
+   (
    
 ## predefined methods for handling hoh storage
-my %store =
-   (
-
-   ## count
-   'count' =>  sub
+   on_store =>
       {
-      my %opts = @_;
-      return ( $opts{old_value} || 1 ) + 1;
-      },
 
-   ## value histogram (count occurences of each value)
-   'frequency' =>  sub
-      {
-      my %opts = @_;
-      my $ref = $opts{old_value} || {};
-      $ref->{ $opts{new_value} } ++;
-      return $ref;
-      },
-   
-   ## push to array
-   'push' =>  sub
-      {
-      my %opts = @_;
-      my $ref = $opts{old_value} || [];
-      push @{ $ref }, $opts{new_value}; 
-      return $ref;
-      },
-
-   ## unshift to array
-   'unshift' =>  sub
-      {
-      my %opts = @_;
-      my $ref = $opts{old_value} || [];
-      unshift @{ $ref }, $opts{new_value}; 
-      return $ref;
-      },
-
-   );   
-
-## predefined methods for handling hoh collisions
-my %collide =
-   (
-   
-   ## weighted-average
-   
-   ## sum
-   'sum' =>  sub
-      {
-      my %opts = @_;
-      return ( $opts{old_value} || 0 ) + ( $opts{new_value} || 0 );
-      },
-
-   ## average
-   'average' =>  sub
-      {
-      my %opts = @_;
-      $opts{'scratch_pad'}{'count'}++;
-      $opts{'scratch_pad'}{'sum'} += $opts{new_value};
-      return $opts{'scratch_pad'}{'sum'} / $opts{'scratch_pad'}{'count'};
-      },
-
-   ## die
-   'die' =>  sub
-      {
-      my %opts = @_;
-      if ( defined $opts{old_value} )
+      ## count
+      'count' =>  sub
          {
-         my @kv_pairs   = @{ $opts{key_value_path} };
-         my @kv_strings = map { "{ '$_->[0]' => '$_->[1]' }" } @kv_pairs;
-         my $kv_path    = join ', ', @kv_strings;
-         confess "Error: key collision in HoH construction (key-value path was: $kv_path)";
-         }
-      },
+         my %opts = @_;
+         return ( $opts{old_value} || 1 ) + 1;
+         },
 
-   ## warn
-   'warn' =>  sub
-      {
-      my %opts = @_;
-      if ( defined $opts{old_value} )
+      ## value histogram (count occurences of each value)
+      'frequency' =>  sub
          {
-         my @kv_pairs   = @{ $opts{key_value_path} };
-         my @kv_strings = map { "{ '$_->[0]' => '$_->[1]' }" } @kv_pairs;
-         my $kv_path    = join ', ', @kv_strings;
-         cluck "Warning: key collision in HoH construction (key-value path was: $kv_path)";
-         }
-      return $opts{new_value};
+         my %opts = @_;
+         my $ref = $opts{old_value} || {};
+         $ref->{ $opts{new_value} } ++;
+         return $ref;
+         },
+      
+      ## push to array
+      'push' =>  sub
+         {
+         my %opts = @_;
+         my $ref = $opts{old_value} || [];
+         push @{ $ref }, $opts{new_value}; 
+         return $ref;
+         },
+
+      ## unshift to array
+      'unshift' =>  sub
+         {
+         my %opts = @_;
+         my $ref = $opts{old_value} || [];
+         unshift @{ $ref }, $opts{new_value}; 
+         return $ref;
+         },
+         
       },
 
-   ## push to array
-   'push' =>  sub
+   ## predefined methods for handling hoh collisions
+   on_collide =>
       {
-      my %opts = @_;
-      my $ref = ref $opts{old_value}
-              ? $opts{old_value}
-              : [ $opts{old_value} ];
-      push @{ $ref }, $opts{new_value}; 
-      return $ref;
-      },
+   
+      ## sum
+      'sum' =>  sub
+         {
+         my %opts = @_;
+         return ( $opts{old_value} || 0 ) + ( $opts{new_value} || 0 );
+         },
 
-   ## unshift to array
-   'unshift' =>  sub
-      {
-      my %opts = @_;
-      my $ref = ref $opts{old_value}
-              ? $opts{old_value}
-              : [ $opts{old_value} ];
-      unshift @{ $ref }, $opts{new_value}; 
-      return $ref;
+      ## average
+      'average' =>  sub
+         {
+         my %opts = @_;
+         $opts{'scratch_pad'}{'count'}++;
+         $opts{'scratch_pad'}{'sum'} += $opts{new_value};
+         return $opts{'scratch_pad'}{'sum'} / $opts{'scratch_pad'}{'count'};
+         },
+
+      ## die
+      'die' =>  sub
+         {
+         my %opts = @_;
+         if ( defined $opts{old_value} )
+            {
+            my @kv_pairs   = @{ $opts{key_value_path} };
+            my @kv_strings = map { "{ '$_->[0]' => '$_->[1]' }" } @kv_pairs;
+            my $kv_path    = join ', ', @kv_strings;
+            confess "Error: key collision in HoH construction (key-value path was: $kv_path)";
+            }
+         },
+
+      ## warn
+      'warn' =>  sub
+         {
+         my %opts = @_;
+         if ( defined $opts{old_value} )
+            {
+            my @kv_pairs   = @{ $opts{key_value_path} };
+            my @kv_strings = map { "{ '$_->[0]' => '$_->[1]' }" } @kv_pairs;
+            my $kv_path    = join ', ', @kv_strings;
+            cluck "Warning: key collision in HoH construction (key-value path was: $kv_path)";
+            }
+         return $opts{new_value};
+         },
+
+      ## push to array
+      'push' =>  sub
+         {
+         my %opts = @_;
+         my $ref = ref $opts{old_value}
+                 ? $opts{old_value}
+                 : [ $opts{old_value} ];
+         push @{ $ref }, $opts{new_value}; 
+         return $ref;
+         },
+
+      ## unshift to array
+      'unshift' =>  sub
+         {
+         my %opts = @_;
+         my $ref = ref $opts{old_value}
+                 ? $opts{old_value}
+                 : [ $opts{old_value} ];
+         unshift @{ $ref }, $opts{new_value}; 
+         return $ref;
+         },
+         
       },
 
    );
@@ -876,14 +879,22 @@ sub _as_hoh
          for my $type ( qw/ on_store on_collide / )
             {
             
-            my $handler = $o->{$type}
-                        ? ref $o->{$type}
-                        ? $o->{$type}{$header}
-                        : $o->{$type}
-                        : undef;
-                        
+            my $handler = $o->{$type};
+
             next if ! $handler;
-                        
+            
+            if ( ref $handler eq 'HASH' )
+               {
+               $handler = $handler->{$header};
+               }
+            
+            next if ! $handler;
+
+            if ( ! ref $handler )
+               {
+               $handler = $named_handlers{$type}{$handler};
+               }
+               
             confess "Error: cannot set multiple storage handlers for '$header'"
                if $storage_handlers{$header};
 
