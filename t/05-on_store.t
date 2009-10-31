@@ -1,7 +1,7 @@
 use warnings;
 use strict;
 
-use Test::More 'no_plan';
+use Test::More tests => 5;
 
 use Text::xSV::Slurp;
 
@@ -63,11 +63,12 @@ EOIN
 a,b,c
 1,2,3
 1,4,3
+1,2,5
 EOIN
 
    exp => 
       {
-      1 => { 3 => { b => [2,4] } },
+      1 => { 3 => { b => [2,4] }, 5 => { b => [2] } },
       },
       
    opts =>
@@ -83,11 +84,12 @@ EOIN
 a,b,c
 1,2,3
 1,4,3
+1,2,5
 EOIN
 
    exp => 
       {
-      1 => { 3 => { b => [4,2] } },
+      1 => { 3 => { b => [4,2] }, 5 => { b => [2] } },
       },
       
    opts =>

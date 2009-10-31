@@ -761,6 +761,11 @@ my %named_handlers =
       'average' =>  sub
          {
          my %opts = @_;
+         if ( ! exists $opts{'scratch_pad'}{'count'} )
+            {
+            $opts{'scratch_pad'}{'count'} = 1;
+            $opts{'scratch_pad'}{'sum'}   = $opts{old_value};
+            }
          $opts{'scratch_pad'}{'count'}++;
          $opts{'scratch_pad'}{'sum'} += $opts{new_value};
          return $opts{'scratch_pad'}{'sum'} / $opts{'scratch_pad'}{'count'};
@@ -1023,19 +1028,11 @@ Dan Boorstein, C<< <dan at boorstein.net> >>
 
 =over
 
-=item * on_collide does not work for counting since it will result in the
-        stored value when there is no subsequent collision, change to on_store
-
-=item * should warn/die on_collide handlers be &-able with other handlers,
-        allowing a particular fallback when no collision occurs
-
 =item * add weighted-average collide keys and tests
 
-=item * document hoh 'on_collide/on_collide_by_key' predefined keys
+=item * document hoh 'on_store/on_collide' predefined keys
 
-=item * document hoh 'on_collide/on_collide_by_key' custom keys
-
-=item * should on_collide accept a hash ref of header-specific actions?
+=item * document hoh 'on_store/on_collide' custom keys
 
 =item * add a recipes/examples section to cover grep and on_collide examples
 

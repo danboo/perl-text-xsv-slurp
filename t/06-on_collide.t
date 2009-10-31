@@ -1,32 +1,12 @@
 use warnings;
 use strict;
 
-use Test::More tests => 19;
+use Test::More tests => 12;
 
 use Text::xSV::Slurp;
 
 my @tests =
    (
-
-   {
-   
-   id => 'no collide',
-
-   in => <<EOIN,
-a,b,c
-1,2,3
-1,2,3
-EOIN
-
-   exp => 
-      {
-      1 => { 3 => { b => 2 } },
-      },
-      
-   opts =>
-      { shape => 'hoh', key => 'a,c' },
-
-   },
 
    {
    
@@ -36,11 +16,12 @@ EOIN
 a,b,c
 1,2,3
 1,4,3
+1,2,5
 EOIN
 
    exp => 
       {
-      1 => { 3 => { b => [2,4] } },
+      1 => { 3 => { b => [2,4] }, 5 => { b => 2 } },
       },
       
    opts =>
@@ -56,11 +37,12 @@ EOIN
 a,b,c
 1,2,3
 1,4,3
+1,2,5
 EOIN
 
    exp => 
       {
-      1 => { 3 => { b => [4,2] } },
+      1 => { 3 => { b => [4,2] }, 5 => { b => 2 } },
       },
       
    opts =>
@@ -76,61 +58,16 @@ EOIN
 a,b,c
 1,2,3
 1,2,3
+1,4,5
 EOIN
 
    exp => 
       {
-      1 => { 3 => { b => 4 } },
+      1 => { 3 => { b => 4 }, 5 => { b => 4 } },
       },
       
    opts =>
       { shape => 'hoh', key => 'a,c', on_collide => 'sum' },
-
-   },
-
-   {
-   
-   id => 'hash histogram collide',
-
-   in => <<EOIN,
-a,b,c
-1,2,3
-1,2,3
-1,4,3
-1,4,3
-1,4,3
-EOIN
-
-   exp => 
-      {
-      1 => { 3 => { b => { 2 => 2, 4 => 3 } } },
-      },
-      
-   opts =>
-      { shape => 'hoh', key => 'a,c', on_collide => 'frequency' },
-
-   },
-
-   {
-   
-   id => 'count collide',
-
-   in => <<EOIN,
-a,b,c
-1,2,3
-1,2,3
-1,2,3
-1,2,3
-1,2,3
-EOIN
-
-   exp => 
-      {
-      1 => { 3 => { b => 5 } },
-      },
-      
-   opts =>
-      { shape => 'hoh', key => 'a,c', on_collide => 'count' },
 
    },
 
@@ -145,107 +82,16 @@ a,b,c
 1,2,3
 1,2,3
 1,7,3
+1,8,5
 EOIN
 
    exp => 
       {
-      1 => { 3 => { b => 3 } },
+      1 => { 3 => { b => 3 }, 5 => { b => 8 } },
       },
       
    opts =>
       { shape => 'hoh', key => 'a,c', on_collide => 'average' },
-
-   },
-
-   {
-   
-   id => 'custom count collide',
-
-   in => <<EOIN,
-a,b,c
-1,2,3
-1,2,3
-1,2,3
-1,2,3
-1,2,3
-EOIN
-
-   exp => 
-      {
-      1 => { 3 => { b => 5 } },
-      },
-      
-   opts =>
-      { shape => 'hoh', key => 'a,c', on_collide => sub { my %o = @_; return ( $o{old_value} || 0 ) + 1 } },
-
-   },
-
-   {
-   
-   id => 'frequency collide by key',
-
-   in => <<EOIN,
-a,b,c
-1,2,3
-1,2,3
-1,2,3
-1,2,3
-1,2,3
-EOIN
-
-   exp => 
-      {
-      1 => { b => { 2 => 5 }, c => 3 },
-      },
-      
-   opts =>
-      { shape => 'hoh', key => 'a', on_collide_by_key => { b => 'frequency' } },
-
-   },
-
-   {
-   
-   id => 'custom count collide by key',
-
-   in => <<EOIN,
-a,b,c
-1,2,3
-1,2,3
-1,2,3
-1,2,3
-1,2,3
-EOIN
-
-   exp => 
-      {
-      1 => { 3 => { b => 5 } },
-      },
-      
-   opts =>
-      { shape => 'hoh', key => 'a,c', on_collide_by_key => { b => sub { my %o = @_; return ( $o{old_value} || 0 ) + 1 } } },
-
-   },
-
-   {
-   
-   id => 'count collide by default and sum collide by key',
-
-   in => <<EOIN,
-a,b,c
-1,2,3
-1,2,3
-1,2,3
-1,2,3
-1,2,3
-EOIN
-
-   exp => 
-      {
-      1 => { b => { 2 => 5 }, c => 15 },
-      },
-      
-   opts =>
-      { shape => 'hoh', key => 'a', on_collide => 'frequency', on_collide_by_key => { c => 'sum' } },
 
    },
 
