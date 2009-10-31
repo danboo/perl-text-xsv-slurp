@@ -965,11 +965,11 @@ sub _as_hoh
             my $on_collide = $storage_handlers{$key}{'on_collide'};
             my $on_store   = $storage_handlers{$key}{'on_store'};
             
-            my $handler    = $on_collide || $on_store;
-
             if ( $on_store || $on_collide && exists $leaf->{$key} )
                {
                
+               my $handler = $on_collide || $on_store;
+
                $new_value = $handler->(
                   key            => $key,
                   key_value_path => [ map [ $key[$_] => $val[$_] ], 0 .. $#key ],
