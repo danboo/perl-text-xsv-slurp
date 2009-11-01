@@ -18,8 +18,11 @@ use Devel::NYTProf;
 
 use Text::xSV::Slurp;
 
-my $hoh = xsv_slurp( file     => 'profile.csv',
+my $data1 = xsv_slurp( file    => 'profile.csv',
                      shape    => 'hoh',
                      key      => '1,2,3',
-                     on_store => 'count',
+                   );
+my $data2 = xsv_slurp( file    => 'profile.csv',
+                     shape    => 'hoh',
+                     key      => '1,2,3',
                    );

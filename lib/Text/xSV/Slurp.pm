@@ -563,21 +563,13 @@ sub _as_aoa
    my @cols;
    my $col_grep;
    
-   while ( my $line = <$handle> )
+   while ( my $line = $csv->getline($handle) )
       {
-      chomp $line;
       
-      if ( ! $csv->parse($line) )
-         {
-         confess 'Error: ' . $csv->error_diag;
-         }
-         
-      my @line = $csv->fields;
-
       ## skip unwanted rows
       if ( defined $o->{'row_grep'} )
          {
-         next if ! $o->{'row_grep'}->( \@line );
+         next if ! $o->{'row_grep'}->( $line );
          }
       
       ## remove unwanted cols   
@@ -586,12 +578,12 @@ sub _as_aoa
          if ( ! $col_grep )
             {
             $col_grep++;
-            @cols = $o->{'col_grep'}->( 0 .. $#line );
+            @cols = $o->{'col_grep'}->( 0 .. $#{ $line } );
             }
-         @line = @line[@cols];
+         @{ $line } = @{ $line }[@cols];
          }
 
-      push @aoa, \@line;
+      push @aoa, $line;
       
       }
    
@@ -629,18 +621,12 @@ sub _as_aoh
          @grep_headers = $o->{'col_grep'}->( @headers );
          }
       
-      while ( my $line = <$handle> )
+      while ( my $line = $csv->getline($handle) )
          {
-         chomp $line;
          
-         if ( ! $csv->parse($line) )
-            {
-            confess 'Error: ' . $csv->error_diag;
-            }
-            
          my %line;
          
-         @line{ @headers } = $csv->fields;
+         @line{ @headers } = @{ $line };
 
          ## skip unwanted rows
          if ( defined $o->{'row_grep'} )
@@ -699,18 +685,11 @@ sub _as_hoa
          @hoa{ @headers } = map { [] } @headers;
          }
       
-      while ( my $line = <$handle> )
+      while ( my $line = $csv->getline($handle) )
          {
-         chomp $line;
-         
-         if ( ! $csv->parse($line) )
-            {
-            confess 'Error: ' . $csv->error_diag;
-            }
-            
          my %line;
          
-         @line{ @headers } = $csv->fields;
+         @line{ @headers } = @{ $line };
 
          ## skip unwanted rows
          if ( defined $o->{'row_grep'} )
@@ -939,18 +918,12 @@ sub _as_hoh
       ## per-header scratch-pads used in collision functions
       my %scratch_pads = map { $_ => {} } @headers;
 
-      while ( my $line = <$handle> )
+      while ( my $line = $csv->getline($handle) )
          {
-         chomp $line;
-         
-         if ( ! $csv->parse($line) )
-            {
-            confess 'Error: ' . $csv->error_diag;
-            }
             
          my %line;
          
-         @line{ @headers } = $csv->fields;
+         @line{ @headers } = @{ $line };
          
          ## skip unwanted rows
          if ( defined $o->{'row_grep'} )
