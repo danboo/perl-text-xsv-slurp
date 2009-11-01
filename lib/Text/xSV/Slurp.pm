@@ -323,11 +323,11 @@ full example:
 
 =head1 HoH storage handlers
 
-Using the C<hoh> shape can result non-unique C<key> combinations. The default
+Using the C<hoh> shape can result in non-unique C<key> combinations. The default
 action is to simply assign the values to the given slot as they are encountered,
-resulting in the last seen value surviving.
+resulting in any prior values being lost.
 
-In this example, using C<h1,h2> as the indexing key with the default collision
+For example, using C<h1,h2> as the indexing key with the default collision
 handler:
 
    $xsv_data = <<EOXSV;
@@ -341,21 +341,39 @@ handler:
                      key    => 'h1,h2'
                    );
    
-would result in the value of C<3> being lost:
+would result in the initial value in the C<h3> column being lost. The resulting
+data structure would only record the C<5> value:
 
    {
-      1 => { 2 => 5 },  ## 3 sir!
+      1 => { 2 => { h3 => 5 } },  ## 3 sir!
    }
 
 Typically this is not very useful. The user probably wanted to aggregate the
-values in some way. This is where the C<on_collide> and C<on_store> handlers
+values in some way. This is where the C<on_store> and C<on_collide> handlers
 come in, allowing the caller to specify how these assignments should be
 handled.
 
-The C<on_collide> handler is only called when a collision is encountered, while
-the C<on_store> handler is called for each assignment. 
+The C<on_store> handler is called for each assignment action, while the
+C<on_collide> handler is only called when an actual collision occurs (i.e.,
+the nested value path for the current line is the same as a prior line).
 
-Using one of the builtin named handlers, this might look like:
+If instead we wanted to push the values onto an array, we could use the built-in
+C<push> handler for the C<on_store> event as follows:
+
+   $hoh = xsv_slurp( string   => $xsv_data,
+                     shape    => 'hoh',
+                     key      => 'h1,h2',
+                     on_store => 'push',
+                   );
+
+the resulting C<HoH>, using the same data as above, would instead look like:
+
+   {
+      1 => { 2 => { h3 => [3,5] } },  ## 3 sir!
+   }
+
+Or if we wanted to sum the values we could us the C<sum> handler for the
+C<on_collide> event:
 
    $hoh = xsv_slurp( string     => $xsv_data,
                      shape      => 'hoh',
@@ -366,8 +384,43 @@ Using one of the builtin named handlers, this might look like:
 resulting in the summation of the values:
 
    {
-      1 => { 2 => 8 },
+      1 => { 2 => { h3 => 8 } },
    }
+
+=head2 builtin C<on_store> handlers
+
+A number of builtin C<on_store> handlers are provided and can be specified
+by name.
+
+The example data structures below use the following data.
+
+   h1,h2,h3
+   1,2,3
+   1,2,5
+
+=head3 count
+
+Count the times a key occurs.
+
+   { 1 => { 2 => { h3 => 2 } } }
+
+=head3 frequency
+
+Create a frequency count of values.
+
+   { 1 => { 2 => { h3 => { 3 => 1, 5 => 1 } } } }
+
+=head3 push
+
+C<push> values onto an array *always*.
+
+   { 1 => { 2 => { h3 => [ 3, 5 ] } } }
+
+=head3 unshift
+
+C<unshift> values onto an array *always*.
+
+   { 1 => { 2 => { h3 => [ 5, 3 ] } } }
 
 =head2 builtin C<on_collide> handlers
 
@@ -384,25 +437,25 @@ The example data structures below use the following data.
 
 Sum the values.
 
-   { 1 => { 2 => 8 } }
+   { 1 => { 2 => { h3 => 8 } } }
 
 =head3 average
 
 Average the values.
 
-   { 1 => { 2 => 4 } }
+   { 1 => { 2 => { h3 => 4 } } }
 
 =head3 push
 
 C<push> values onto an array *only on colliding*.
 
-   { 1 => { 2 => [ 3, 5 ] } }
+   { 1 => { 2 => { h3 => [ 3, 5 ] } } }
 
 =head3 unshift
 
 C<unshift> values onto an array *only on colliding*.
 
-   { 1 => { 2 => [ 5, 3 ] } }
+   { 1 => { 2 => { h3 => [ 5, 3 ] } } }
 
 =head3 die
 
@@ -415,34 +468,6 @@ Carp::confess if a collision occurs.
 Carp::cluck if a collision occurs.
 
    Warning: key collision in HoH construction (key-value path was: { 'h1' => '1' }, { 'h2' => '2' })
-
-=head2 builtin C<on_store> handlers
-
-=head3 count
-
-Count the times a key occurs.
-
-   { 1 => { 2 => 2 } }
-
-=head3 frequency
-
-Create a frequency count of values.
-
-   { 1 => { 2 => { 3 => 1, 5 => 1 } } }
-
-=head3 push
-
-C<push> values onto an array *always*.
-
-   { 1 => { 2 => [ 3, 5 ] } }
-
-=head3 unshift
-
-C<unshift> values onto an array *always*.
-
-   { 1 => { 2 => [ 5, 3 ] } }
-
-=head2 custom handlers
 
 =cut
 
