@@ -1,7 +1,7 @@
 use warnings;
 use strict;
 
-use Test::More tests => 12;
+use Test::More tests => 13;
 
 use Text::xSV::Slurp;
 
@@ -92,6 +92,40 @@ EOIN
       
    opts =>
       { shape => 'hoh', key => 'a,c', on_collide => 'average' },
+
+   },
+   
+   {
+   
+   id => 'by key - all',
+
+   in => <<EOIN,
+a,b,sum,average,push,unshift
+1,2,3,3,2,3
+1,4,3,1,2,3
+1,2,5,5,3,4
+EOIN
+
+   exp => 
+      {
+      1 => {
+         2 => {
+            sum     => 8,
+            average => 4,
+            push    => [ 2, 3 ],
+            unshift => [ 4, 3 ],
+              },
+         4 => {
+            sum     => 3,
+            average => 1,
+            push    => 2,
+            unshift => 3,
+              },
+           },
+      },
+      
+   opts =>
+      { shape => 'hoh', key => 'a,b', on_collide => { map { $_ => $_ } qw/ sum average push unshift / } },
 
    },
 

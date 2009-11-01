@@ -102,7 +102,7 @@ EOIN
    id => 'by key - all',
 
    in => <<EOIN,
-a,b,count,frequency,push,unshift
+a,b,sum,average,push,unshift
 1,2,3,1,2,3
 1,4,3,1,2,3
 1,2,5,1,2,3
