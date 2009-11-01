@@ -1,5 +1,12 @@
 Revision history for Text-xSV-Slurp
 
+0.21
+        - speed enhancements:
+           - use Text::CSV->getline() for combined readline/parse/array_ref operation
+           - hoh on_store/on_collide handler argument passing is now array based
+             with named constants, saving from unpacking @_ into an option hash
+             in a very tight loop
+
 0.20    Sun Nov  1 08:18:10 2009
         - added support for predefined on_store/on_collide handlers to the hoh
           shape, allowing the user to specify how values should be aggregated
