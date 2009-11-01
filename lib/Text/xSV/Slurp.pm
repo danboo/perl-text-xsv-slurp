@@ -998,13 +998,13 @@ sub _as_hoh
                my $handler = $on_collide || $on_store;
 
                $new_value = $handler->(
-                  $key,
-                  [ map [ $key[$_] => $val[$_] ], 0 .. $#key ],
-                  $leaf->{$key},
-                  $new_value,
-                  \%line,
-                  \%hoh,
-                  $scratch_pads{$key},
+                  $key,                                         ## HOH_HANDLER_KEY
+                  [ map [ $key[$_] => $val[$_] ], 0 .. $#key ], ## HOH_HANDLER_KEY_VALUE_PATH
+                  $leaf->{$key},                                ## HOH_HANDLER_OLD_VALUE
+                  $new_value,                                   ## HOH_HANDLER_NEW_VALUE
+                  \%line,                                       ## HOH_HANDLER_LINE_HASH
+                  \%hoh,                                        ## HOH_HANDLER_HOH
+                  $scratch_pads{$key},                          ## HOH_HANDLER_SCRATCH_PAD
                   );
 
                }
