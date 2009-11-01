@@ -150,7 +150,7 @@ EOIN
       },
       
    opts =>
-      { shape => 'hoh', key => 'a,c', on_store => sub { my %o = @_; return ( $o{old_value} || 0 ) + 1 } },
+      { shape => 'hoh', key => 'a,c', on_store => sub { return ( $_[Text::xSV::Slurp::HOH_HANDLER_OLD_VALUE] || 0 ) + 1 } },
 
    },
 

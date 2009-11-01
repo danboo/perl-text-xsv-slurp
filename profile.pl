@@ -3,21 +3,23 @@ use warnings;
 
 use lib './lib';
 
-BEGIN
-   {
-   open my $csv_fh, '>', 'profile.csv' or die;
-   my $r = join ',', 1 .. 10;
-   for ( 1 .. 10000 )
-      {
-      print $csv_fh $r, "\n";
-      }
-   }
+#BEGIN
+#   {
+#   open my $csv_fh, '>', 'profile.csv' or die;
+#   my $r = join ',', 1 .. 10;
+#   for ( 1 .. 50000 )
+#      {
+#      print $csv_fh $r, "\n";
+#      }
+#   close $csv_fh;
+#   }
 
 use Devel::NYTProf;
 
 use Text::xSV::Slurp;
 
-my $hoh = xsv_slurp( 'profile.csv',
-                     shape => 'hoh',
-                     key => '1,2,3'
+my $hoh = xsv_slurp( file     => 'profile.csv',
+                     shape    => 'hoh',
+                     key      => '1,2,3',
+                     on_store => 'count',
                    );

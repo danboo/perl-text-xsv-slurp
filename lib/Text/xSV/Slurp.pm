@@ -7,6 +7,14 @@ use Carp 'confess', 'cluck';
 use Text::CSV;
 use IO::String;
 
+use constant HOH_HANDLER_KEY            => 0;
+use constant HOH_HANDLER_KEY_VALUE_PATH => 1;
+use constant HOH_HANDLER_OLD_VALUE      => 2;
+use constant HOH_HANDLER_NEW_VALUE      => 3;
+use constant HOH_HANDLER_LINE_HASH      => 4;
+use constant HOH_HANDLER_HOH            => 5;
+use constant HOH_HANDLER_SCRATCH_PAD    => 6;
+
 use base 'Exporter';
 
 our @EXPORT = qw/ xsv_slurp /;
@@ -738,34 +746,30 @@ my %named_handlers =
       ## count
       'count' =>  sub
          {
-         my %opts = @_;
-         return ( $opts{old_value} || 0 ) + 1;
+         return ( $_[HOH_HANDLER_OLD_VALUE] || 0 ) + 1;
          },
 
       ## value histogram (count occurences of each value)
       'frequency' =>  sub
          {
-         my %opts = @_;
-         my $ref = $opts{old_value} || {};
-         $ref->{ $opts{new_value} } ++;
+         my $ref = $_[HOH_HANDLER_OLD_VALUE] || {};
+         $ref->{ $_[HOH_HANDLER_NEW_VALUE] } ++;
          return $ref;
          },
       
       ## push to array
       'push' =>  sub
          {
-         my %opts = @_;
-         my $ref = $opts{old_value} || [];
-         push @{ $ref }, $opts{new_value}; 
+         my $ref = $_[HOH_HANDLER_OLD_VALUE] || [];
+         push @{ $ref }, $_[HOH_HANDLER_NEW_VALUE]; 
          return $ref;
          },
 
       ## unshift to array
       'unshift' =>  sub
          {
-         my %opts = @_;
-         my $ref = $opts{old_value} || [];
-         unshift @{ $ref }, $opts{new_value}; 
+         my $ref = $_[HOH_HANDLER_OLD_VALUE] || [];
+         unshift @{ $ref }, $_[HOH_HANDLER_NEW_VALUE]; 
          return $ref;
          },
          
@@ -778,31 +782,28 @@ my %named_handlers =
       ## sum
       'sum' =>  sub
          {
-         my %opts = @_;
-         return ( $opts{old_value} || 0 ) + ( $opts{new_value} || 0 );
+         return ( $_[HOH_HANDLER_OLD_VALUE] || 0 ) + ( $_[HOH_HANDLER_NEW_VALUE] || 0 );
          },
 
       ## average
       'average' =>  sub
          {
-         my %opts = @_;
-         if ( ! exists $opts{'scratch_pad'}{'count'} )
+         if ( ! exists $_[HOH_HANDLER_SCRATCH_PAD]{'count'} )
             {
-            $opts{'scratch_pad'}{'count'} = 1;
-            $opts{'scratch_pad'}{'sum'}   = $opts{old_value};
+            $_[HOH_HANDLER_SCRATCH_PAD]{'count'} = 1;
+            $_[HOH_HANDLER_SCRATCH_PAD]{'sum'}   = $_[HOH_HANDLER_OLD_VALUE];
             }
-         $opts{'scratch_pad'}{'count'}++;
-         $opts{'scratch_pad'}{'sum'} += $opts{new_value};
-         return $opts{'scratch_pad'}{'sum'} / $opts{'scratch_pad'}{'count'};
+         $_[HOH_HANDLER_SCRATCH_PAD]{'count'}++;
+         $_[HOH_HANDLER_SCRATCH_PAD]{'sum'} += $_[HOH_HANDLER_NEW_VALUE];
+         return $_[HOH_HANDLER_SCRATCH_PAD]{'sum'} / $_[HOH_HANDLER_SCRATCH_PAD]{'count'};
          },
 
       ## die
       'die' =>  sub
          {
-         my %opts = @_;
-         if ( defined $opts{old_value} )
+         if ( defined $_[HOH_HANDLER_OLD_VALUE] )
             {
-            my @kv_pairs   = @{ $opts{key_value_path} };
+            my @kv_pairs   = @{ $_[HOH_HANDLER_KEY_VALUE_PATH] };
             my @kv_strings = map { "{ '$_->[0]' => '$_->[1]' }" } @kv_pairs;
             my $kv_path    = join ', ', @kv_strings;
             confess "Error: key collision in HoH construction (key-value path was: $kv_path)";
@@ -812,36 +813,33 @@ my %named_handlers =
       ## warn
       'warn' =>  sub
          {
-         my %opts = @_;
-         if ( defined $opts{old_value} )
+         if ( defined $_[HOH_HANDLER_OLD_VALUE] )
             {
-            my @kv_pairs   = @{ $opts{key_value_path} };
+            my @kv_pairs   = @{ $_[HOH_HANDLER_KEY_VALUE_PATH] };
             my @kv_strings = map { "{ '$_->[0]' => '$_->[1]' }" } @kv_pairs;
             my $kv_path    = join ', ', @kv_strings;
             cluck "Warning: key collision in HoH construction (key-value path was: $kv_path)";
             }
-         return $opts{new_value};
+         return $_[HOH_HANDLER_NEW_VALUE];
          },
 
       ## push to array
       'push' =>  sub
          {
-         my %opts = @_;
-         my $ref = ref $opts{old_value}
-                 ? $opts{old_value}
-                 : [ $opts{old_value} ];
-         push @{ $ref }, $opts{new_value}; 
+         my $ref = ref $_[HOH_HANDLER_OLD_VALUE]
+                 ? $_[HOH_HANDLER_OLD_VALUE]
+                 : [ $_[HOH_HANDLER_OLD_VALUE] ];
+         push @{ $ref }, $_[HOH_HANDLER_NEW_VALUE]; 
          return $ref;
          },
 
       ## unshift to array
       'unshift' =>  sub
          {
-         my %opts = @_;
-         my $ref = ref $opts{old_value}
-                 ? $opts{old_value}
-                 : [ $opts{old_value} ];
-         unshift @{ $ref }, $opts{new_value}; 
+         my $ref = ref $_[HOH_HANDLER_OLD_VALUE]
+                 ? $_[HOH_HANDLER_OLD_VALUE]
+                 : [ $_[HOH_HANDLER_OLD_VALUE] ];
+         unshift @{ $ref }, $_[HOH_HANDLER_NEW_VALUE]; 
          return $ref;
          },
          
@@ -1000,13 +998,13 @@ sub _as_hoh
                my $handler = $on_collide || $on_store;
 
                $new_value = $handler->(
-                  key            => $key,
-                  key_value_path => [ map [ $key[$_] => $val[$_] ], 0 .. $#key ],
-                  old_value      => $leaf->{$key},
-                  new_value      => $new_value,
-                  line_hash      => \%line,
-                  hoh            => \%hoh,
-                  scratch_pad    => $scratch_pads{$key},
+                  $key,
+                  [ map [ $key[$_] => $val[$_] ], 0 .. $#key ],
+                  $leaf->{$key},
+                  $new_value,
+                  \%line,
+                  \%hoh,
+                  $scratch_pads{$key},
                   );
 
                }
@@ -1057,11 +1055,7 @@ Dan Boorstein, C<< <dan at boorstein.net> >>
 
 =over
 
-=item * die if a named handler is not recognized
-
 =item * add weighted-average collide keys and tests
-
-=item * document hoh 'on_store/on_collide' predefined keys
 
 =item * document hoh 'on_store/on_collide' custom keys
 
