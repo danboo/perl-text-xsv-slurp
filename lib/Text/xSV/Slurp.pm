@@ -82,6 +82,10 @@ Option summary:
 
 =item * C<key> - xSV string or ARRAY used to build the keys of the C<hoh> shape
 
+=item * C<on_store> - redefine how the C<hoh> shape should store values
+
+=item * C<on_collide> - redefine how the C<hoh> shape should handle key collisions
+
 =item * C<text_csv> - option hash for L<Text::CSV>/L<Text::CSV_XS> constructor
 
 =back
