@@ -1,7 +1,7 @@
 use warnings;
 use strict;
 
-use Test::More tests => 6;
+use Test::More tests => 7;
 
 use Text::xSV::Slurp;
 
@@ -161,7 +161,12 @@ for my $test ( @tests )
    my $got = xsv_slurp( string => $test->{'in'}, %{ $test->{'opts'} } );
    my $exp = $test->{'exp'};
    my $id  = $test->{'id'};
-   use Data::Dumper;
-   #print Dumper $got;
    is_deeply($got, $exp, $id);
    }
+   
+my $got = eval { xsv_slurp( string => "a,b\n1,1\n1,1\n", shape => 'hoh', key => 'a', on_store => 'not_a_handler' ) };
+
+my $err = $@;
+
+like( $err, qr/\AError: unknown 'on_store' handler given: not_a_handler/, 'unknown handler error' );
+   

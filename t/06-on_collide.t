@@ -1,7 +1,7 @@
 use warnings;
 use strict;
 
-use Test::More tests => 13;
+use Test::More tests => 14;
 
 use Text::xSV::Slurp;
 
@@ -139,9 +139,15 @@ for my $test ( @tests )
    is_deeply($got, $exp, $id);
    }
 
-my $got = eval { xsv_slurp( string => "a,b\n1,1\n1,1\n", shape => 'hoh', key => 'a', on_collide => 'die' ) };
+my $got = eval { xsv_slurp( string => "a,b\n1,1\n1,1\n", shape => 'hoh', key => 'a', on_collide => 'not_a_handler' ) };
 
 my $err = $@;
+
+like( $err, qr/\AError: unknown 'on_collide' handler given: not_a_handler/, 'unknown handler error' );
+
+$got = eval { xsv_slurp( string => "a,b\n1,1\n1,1\n", shape => 'hoh', key => 'a', on_collide => 'die' ) };
+
+$err = $@;
 
 like( $err, qr/\AError: key collision in HoH construction \(key-value path was: { 'a' => '1' }\)/, 'die collide' );
 

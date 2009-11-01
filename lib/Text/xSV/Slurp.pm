@@ -922,6 +922,10 @@ sub _as_hoh
 
             if ( ! ref $handler )
                {
+
+               confess "Error: unknown '$type' handler given: $handler"
+                  if ! exists $named_handlers{$type}{$handler};
+
                $handler = $named_handlers{$type}{$handler};
                }
                
