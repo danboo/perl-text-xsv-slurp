@@ -1,5 +1,10 @@
 Revision history for Text-xSV-Slurp
 
+0.20    Sun Nov  1 08:18:10 2009
+        - added support for predefined on_store/on_collide handlers to the hoh
+          shape, allowing the user to specify how values should be aggregated
+          when the key does result in unique values
+
 0.12    Sun Oct 18 20:54:53 2009
         - tests do not explicitly import xsv_slurp in order to test that it is
           exported by default
