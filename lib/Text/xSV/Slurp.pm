@@ -1053,6 +1053,8 @@ Dan Boorstein, C<< <dan at boorstein.net> >>
 
 =over
 
+=item * die if a named handler is not recognized
+
 =item * add weighted-average collide keys and tests
 
 =item * document hoh 'on_store/on_collide' predefined keys

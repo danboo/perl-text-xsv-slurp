@@ -1,7 +1,7 @@
 use warnings;
 use strict;
 
-use Test::More tests => 5;
+use Test::More tests => 6;
 
 use Text::xSV::Slurp;
 
@@ -99,7 +99,41 @@ EOIN
 
    {
    
-   id => 'custom count collide',
+   id => 'by key - all',
+
+   in => <<EOIN,
+a,b,count,frequency,push,unshift
+1,2,3,1,2,3
+1,4,3,1,2,3
+1,2,5,1,2,3
+EOIN
+
+   exp => 
+      {
+      1 => {
+         2 => {
+            count     => 2,
+            frequency => { 1 => 2 },
+            push      => [ 2, 2 ],
+            unshift   => [ 3, 3 ],
+              },
+         4 => {
+            count     => 1,
+            frequency => { 1 => 1 },
+            push      => [ 2 ],
+            unshift   => [ 3 ],
+              },
+           },
+      },
+      
+   opts =>
+      { shape => 'hoh', key => 'a,b', on_store => { map { $_ => $_ } qw/ count frequency push unshift / } },
+
+   },
+
+   {
+   
+   id => 'custom count',
 
    in => <<EOIN,
 a,b,c
@@ -127,5 +161,7 @@ for my $test ( @tests )
    my $got = xsv_slurp( string => $test->{'in'}, %{ $test->{'opts'} } );
    my $exp = $test->{'exp'};
    my $id  = $test->{'id'};
+   use Data::Dumper;
+   #print Dumper $got;
    is_deeply($got, $exp, $id);
    }
