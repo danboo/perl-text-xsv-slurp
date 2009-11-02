@@ -33,8 +33,9 @@ our $VERSION = '0.21';
 
 =head1 SYNOPSIS
 
-C<Text::xSV::Slurp> converts between xSV data and a variety of nested data
-shapes, allowing both column and row filtering using user defined functions.
+C<Text::xSV::Slurp> converts xSV (typically CSV) data to nested data structures
+of various shapes. It allows both column and row filtering using user defined
+functions.
 
 This brief example creates an array of hashes from a file, where each array
 record corresponds to a line of the file, and each line is represented as a hash
@@ -61,8 +62,9 @@ of header-to-value pairs.
 
 =head2 C<xsv_slurp()>
 
-C<xsv_slurp()> converts an xSV data source to one of a variety of nested data
-shapes. It allows both column and row filtering using user defined functions.
+C<xsv_slurp()> converts xSV (typically CSV) data to nested data structures of
+various shapes. It allows both column and row filtering using user defined
+functions.
 
 Option summary:
 
