@@ -1,6 +1,6 @@
 Revision history for Text-xSV-Slurp
 
-0.21
+0.21    Sun Nov  1 22:04:56 2009
         - speed enhancements:
            - use Text::CSV->getline() for combined readline/parse/array_ref operation
            - hoh on_store/on_collide handler argument passing is now array based
