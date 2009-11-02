@@ -1034,6 +1034,8 @@ Dan Boorstein, C<< <dan at boorstein.net> >>
 
 =over
 
+=item * add a naive split mode for raw speed
+
 =item * add weighted-average collide keys and tests
 
 =item * document hoh 'on_store/on_collide' custom keys
