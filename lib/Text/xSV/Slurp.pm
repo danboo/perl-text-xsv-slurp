@@ -540,7 +540,18 @@ sub xsv_slurp
       my @all_shapes = keys %shape_map;
       confess "Error: unrecognized shape given ($shape). Must be one of: @all_shapes"
       }
+      
+   ## check various global options for expectations
+   if ( defined $o{'col_grep'} && ref $o{'col_grep'} ne 'CODE' )
+      {
+      confess 'Error: col_grep must be a CODE ref';
+      }
    
+   if ( defined $o{'row_grep'} && ref $o{'row_grep'} ne 'CODE' )
+      {
+      confess 'Error: row_grep must be a CODE ref';
+      }
+
    ## isolate the source
    my $src      = $given_srcs[0];
    
@@ -871,7 +882,7 @@ sub _as_hoh
          @key = @{ $o->{'key'} };
          
          }
-      else
+      elsif ( defined $o->{'key'} )
          {
       
          if ( ! $csv->parse( $o->{'key'} ) )
@@ -881,6 +892,10 @@ sub _as_hoh
             
          @key = $csv->fields;
 
+         }
+      else
+         {
+         confess 'Error: no key given for hoh shape';
          }
 
       ## set the on_collide handler at the default level and by header
@@ -906,8 +921,11 @@ sub _as_hoh
             if ( ! ref $handler )
                {
 
-               confess "Error: unknown '$type' handler given: $handler"
-                  if ! exists $named_handlers{$type}{$handler};
+               if ( ! exists $named_handlers{$type}{$handler} )
+                  {
+                  my $all_names = join ', ', sort keys %{ $named_handlers{$type} };
+                  confess "Error: invalid '$type' handler given ($handler). Must be one of: $all_names."
+                  }
 
                $handler = $named_handlers{$type}{$handler};
                }
@@ -1019,7 +1037,7 @@ sub _get_handle
 
    if ( $src_type eq 'file' )
       {
-      open( my $handle, '<', $src_value ) || confess "Error opening $src_value: $!";
+      open( my $handle, '<', $src_value ) || confess "Error: could not open '$src_value': $!";
       return $handle;
       }
 
