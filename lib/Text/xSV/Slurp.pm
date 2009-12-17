@@ -335,6 +335,33 @@ full example:
 
 =back
 
+=head2 C<xsv_eruct()>
+
+C<xsv_eruct()> converts nested data structures, of various shapes, to xSV
+(typically CSV) data.
+
+Option summary:
+
+=over
+
+=item * C<data> - data to be convert to xsv
+
+=item * C<file> - file name to be written
+
+=item * C<handle> - file handle to be written to
+
+=item * C<string> - string to be written to
+
+=item * C<col_grep> - skip a subset of columns based on user callback
+
+=item * C<row_grep> - skip a subset of rows based on user callback
+
+=item * C<key> - xSV string or ARRAY used to build the keys of the C<hoh> shape
+
+=item * C<text_csv> - option hash for L<Text::CSV>/L<Text::CSV_XS> constructor
+
+=back
+
 =head1 HoH storage handlers
 
 Using the C<hoh> shape can result in non-unique C<key> combinations. The default
@@ -484,6 +511,67 @@ Carp::cluck if a collision occurs.
    Warning: key collision in HoH construction (key-value path was: { 'h1' => '1' }, { 'h2' => '2' })
 
 =cut
+
+sub xsv_eruct
+   {
+   my @o = @_;
+   
+   my %o = @o;
+   
+   ## validate the source type   
+   my @all_srcs   = qw/ file handle string /;
+   my @given_srcs = grep { defined $o{$_} } @all_srcs;
+   
+   if ( ! @given_srcs )
+      {
+      confess "Error: no source given, specify one of: @all_srcs.";
+      }
+   elsif ( @given_srcs > 1 )
+      {
+      confess "Error: too many sources given (@given_srcs), specify only one.";
+      }
+      
+   ## guess the data shape
+   my $shape = do
+      {
+      if ( ref $o{data} eq 'ARRAY' )
+         {
+         if ( ref $o{data}[0] eq 'ARRAY' )
+            {
+            'aoa';
+            }
+         elsif ( ref $o{data}[0] eq 'HASH' )
+            {
+            'aoh';
+            }
+         else
+            {
+            die 'Error: could not determine data shape';
+            }
+         }
+      elsif ( ref $o{data} eq 'HASH' )
+         {
+         my $key = ( keys %{ $o{data} } )[0];
+         if ( ref $o{data}{$key} eq 'ARRAY' )
+            {
+            'hoa';
+            }
+         elsif ( ref $o{data}{$key} eq 'HASH' )
+            {
+            'hoh';
+            }
+         else
+            {
+            die 'Error: could not determine data shape';
+            }
+         }
+      else
+         {
+         die 'Error: could not determine data shape';
+         }
+      };
+
+   }
 
 my %shape_map =
    (
@@ -1022,7 +1110,7 @@ sub _as_hoh
 ## $src_value - the file name, file handle or xSV string
 sub _get_handle
    {
-   my ( $src_type, $src_value ) = @_;
+   my ( $src_type, $src_value, $mode ) = @_;
 
    if ( $src_type eq 'handle' )
       {
