@@ -1052,7 +1052,7 @@ Dan Boorstein, C<< <dan at boorstein.net> >>
 
 =over
 
-=item * add a naive split mode for raw speed
+=item * add xsv_eruct() to dump shapes to xsv data
 
 =item * add weighted-average collide keys and tests
 
