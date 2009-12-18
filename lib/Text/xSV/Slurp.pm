@@ -1130,6 +1130,22 @@ sub _guess_shape
 
 }
 
+## arguments:
+## $handle - file handle
+## $csv    - the Text::CSV parser object
+## $o      - the user options passed to xsv_slurp   
+sub _from_aoa
+   {
+   my ( $handle, $csv, $o ) = @_;
+   
+   for my $row ( @{ $o->{data} } )
+      {
+      
+      $csv->print( $handle, $row );
+      
+      }
+   }
+
 =head1 AUTHOR
 
 Dan Boorstein, C<< <dan at boorstein.net> >>
