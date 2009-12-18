@@ -532,44 +532,7 @@ sub xsv_eruct
       }
       
    ## guess the data shape
-   my $shape = do
-      {
-      if ( ref $o{data} eq 'ARRAY' )
-         {
-         if ( ref $o{data}[0] eq 'ARRAY' )
-            {
-            'aoa';
-            }
-         elsif ( ref $o{data}[0] eq 'HASH' )
-            {
-            'aoh';
-            }
-         else
-            {
-            die 'Error: could not determine data shape';
-            }
-         }
-      elsif ( ref $o{data} eq 'HASH' )
-         {
-         my $key = ( keys %{ $o{data} } )[0];
-         if ( ref $o{data}{$key} eq 'ARRAY' )
-            {
-            'hoa';
-            }
-         elsif ( ref $o{data}{$key} eq 'HASH' )
-            {
-            'hoh';
-            }
-         else
-            {
-            die 'Error: could not determine data shape';
-            }
-         }
-      else
-         {
-         die 'Error: could not determine data shape';
-         }
-      };
+   my $shape = _guess_shape( $o{data} );
 
    }
 
@@ -1130,7 +1093,44 @@ sub _get_handle
       }
 
    confess "Error: could not determine source type";
-   }   
+   }
+
+{
+
+my $ref_map =
+   {
+   'HASH' => 'h',
+   'ARRAY' => 'a',
+   };
+
+## arguments:
+## $data: the data structure to be eructed
+sub _guess_shape
+   {
+   my ( $data ) = @_;
+   
+   my $shape = ( $ref_map->{ ref $data } || '' ) . 'o';
+   
+   my $nested = $shape eq 'a'
+              ? $data->[0]
+              : $shape eq 'h'
+              ? ( values %{ $data } )[0]
+              : undef;
+              
+   if ( $nested )
+      {
+      $shape .= $ref_map->{ ref $nested } || '';
+      }
+
+   if ( ! $shape || length $shape != 3 )
+      {
+      die 'Error: could not determine data shape';
+      }
+
+   return $shape;
+   }
+
+}
 
 =head1 AUTHOR
 
