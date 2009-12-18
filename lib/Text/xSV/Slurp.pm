@@ -1109,23 +1109,21 @@ sub _guess_shape
    {
    my ( $data ) = @_;
    
-   my $shape = ( $ref_map->{ ref $data } || '' ) . 'o';
+   my $shape = $ref_map->{ ref $data } || '';
    
-   my $nested = $shape eq 'a'
-              ? $data->[0]
-              : $shape eq 'h'
-              ? ( values %{ $data } )[0]
-              : undef;
+   $shape || die 'Error: could not determine data shape (invalid top)';
+   
+   my $nested =
+      {
+      a => $data->[0],
+      h => ( values %{ $data } )[0],
+      } -> { $shape };
               
-   if ( $nested )
-      {
-      $shape .= $ref_map->{ ref $nested } || '';
-      }
+   $nested || die 'Error: could not determine data shape (no nested data)';
+   
+   $shape .= 'o' . ( $ref_map->{ ref $nested } || '' );
 
-   if ( ! $shape || length $shape != 3 )
-      {
-      die 'Error: could not determine data shape';
-      }
+   length $shape != 3 || die 'Error: could not determine data shape (invalid nested)';
 
    return $shape;
    }
