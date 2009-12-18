@@ -512,6 +512,14 @@ Carp::cluck if a collision occurs.
 
 =cut
 
+my %from_shape_map =
+   (
+   'aoa' => \&_from_aoa,
+   'aoh' => \&_from_aoh,
+   'hoa' => \&_from_hoa,
+   'hoh' => \&_from_hoh,
+   );
+
 sub xsv_eruct
    {
    my @o = @_;
@@ -532,11 +540,25 @@ sub xsv_eruct
       }
       
    ## guess the data shape
-   my $shape = _guess_shape( $o{data} );
+   my $shape  = _guess_shape( $o{data} );
+   
+   ## create the CSV parser
+   my $csv    = Text::CSV->new( $o{text_csv} || () );
+
+   ## isolate the source
+   my $src    = $given_srcs[0];
+
+   ## convert the source to a handle
+   my $handle = _get_handle( $src => $o{$src}, '>' );
+
+   ## perform the write
+   $from_shape_map{$shape}->( $handle, $csv, \%o );
+   
+   close $handle;
 
    }
 
-my %shape_map =
+my %to_shape_map =
    (
    'aoa' => \&_as_aoa,
    'aoh' => \&_as_aoh,
@@ -584,11 +606,11 @@ sub xsv_slurp
 
    ## validate the shape      
    my $shape  = defined $o{'shape'} ? lc $o{'shape'} : 'aoh';
-   my $shaper = $shape_map{ $shape };
+   my $shaper = $to_shape_map{ $shape };
    
    if ( ! $shaper )
       {
-      my @all_shapes = keys %shape_map;
+      my @all_shapes = keys %to_shape_map;
       confess "Error: unrecognized shape given ($shape). Must be one of: @all_shapes"
       }
       
@@ -607,7 +629,7 @@ sub xsv_slurp
    my $src      = $given_srcs[0];
    
    ## convert the source to a handle
-   my $handle   = _get_handle( $src => $o{$src} );
+   my $handle   = _get_handle( $src => $o{$src}, '<' );
    
    ## create the CSV parser
    my $csv      = Text::CSV->new( $o{'text_csv'} || () );
@@ -1088,7 +1110,7 @@ sub _get_handle
 
    if ( $src_type eq 'file' )
       {
-      open( my $handle, '<', $src_value ) || confess "Error: could not open '$src_value': $!";
+      open( my $handle, $mode, $src_value ) || confess "Error: could not open '$src_value': $!";
       return $handle;
       }
 
@@ -1142,6 +1164,8 @@ sub _from_aoa
       {
       
       $csv->print( $handle, $row );
+      
+      print $handle "\n";
       
       }
    }
