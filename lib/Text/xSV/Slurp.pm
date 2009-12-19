@@ -1119,6 +1119,10 @@ sub _get_handle
 
    if ( $src_type eq 'string' )
       {
+      if ( ref $src_value )
+         {
+         $src_value = ${ $src_value };
+         }
       my $handle = IO::String->new( $mode eq '<' ? $src_value : () );
       return $handle;
       }
