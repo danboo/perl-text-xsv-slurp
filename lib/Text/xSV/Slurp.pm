@@ -530,6 +530,8 @@ sub xsv_eruct
    my @all_srcs   = qw/ file handle string /;
    my @given_srcs = grep { defined $o{$_} } @all_srcs;
    
+   my $buffer;
+   
    if ( ! @given_srcs )
       {
       confess "Error: no source given, specify one of: @all_srcs.";
@@ -554,8 +556,16 @@ sub xsv_eruct
    ## perform the write
    $from_shape_map{$shape}->( $handle, $csv, \%o );
    
-   close $handle;
+   if ( $src eq 'string' )
+      {
+      ${ $o{string} } = ${ $handle->string_ref };
+      }
 
+   if ( $src ne 'handle' )
+      {
+      close $handle;
+      }
+   
    }
 
 my %to_shape_map =
@@ -636,6 +646,11 @@ sub xsv_slurp
    
    ## run the data conversion
    my $data     = $shaper->( $handle, $csv, \%o );
+   
+   if ( $src ne 'handle' )
+      {
+      close $handle;
+      }
    
    return $data;
    }
@@ -1104,7 +1119,7 @@ sub _get_handle
 
    if ( $src_type eq 'string' )
       {
-      my $handle = IO::String->new( $src_value );
+      my $handle = IO::String->new( $mode eq '<' ? $src_value : () );
       return $handle;
       }
 
