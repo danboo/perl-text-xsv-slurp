@@ -68,6 +68,36 @@ my @tests =
    exp  => "a,b,c\n1,3,\n2,4,5\n",
    },
 
+   {
+   name => 'hoa - 1x1',
+   data => { a => [ 1 ] },
+   exp  => "a\n1\n",
+   },
+
+   {
+   name => 'hoa - 2x1',
+   data => { a => [ 1 ], b => [ 2 ] },
+   exp  => "a,b\n1,2\n",
+   },
+
+   {
+   name => 'hoa - 1x2',
+   data => { a => [ 1, 2 ] },
+   exp  => "a\n1\n2\n",
+   },
+
+   {
+   name => 'hoa - 2x2',
+   data => { a => [ 1,3 ], b => [ 2,4 ] },
+   exp  => "a,b\n1,2\n3,4\n",
+   },
+
+   {
+   name => 'hoa - irregular',
+   data => { a => [ 1,3 ], b => [ 2,4 ], c => [ 5..7 ] },
+   exp  => "c,a,b\n5,1,2\n6,3,4\n7,,\n",
+   },
+
    );
    
 plan tests => scalar @tests;   

@@ -1230,6 +1230,35 @@ sub _from_aoh
 
    }
 
+## arguments:
+## $handle - file handle
+## $csv    - the Text::CSV parser object
+## $o      - the user options passed to xsv_slurp   
+sub _from_hoa
+   {
+   my ( $handle, $csv, $o ) = @_;
+   
+   my @headers = sort
+      {
+      $#{ $o->{data}{$b} } <=> $#{ $o->{data}{$a} } || $a cmp $b
+      }
+      keys %{ $o->{data} };   
+   
+   $csv->print( $handle, \@headers );
+      
+   print $handle "\n";
+   
+   for my $row_i ( 0 .. $#{ $o->{data}{$headers[0]} } )
+      {
+      my @row = map { my $r = $o->{data}{$_}[$row_i]; defined $r ? $r : '' } @headers;
+
+      $csv->print( $handle, \@row );
+
+      print $handle "\n";
+      }
+
+   }
+
 =head1 AUTHOR
 
 Dan Boorstein, C<< <dan at boorstein.net> >>
@@ -1237,6 +1266,10 @@ Dan Boorstein, C<< <dan at boorstein.net> >>
 =head1 TODO
 
 =over
+
+=item * add creation synthetic/derived cols
+
+=item * allow col_grep to be an array ref of indexes or column names
 
 =item * add xsv_eruct() to dump shapes to xsv data
 
