@@ -11,6 +11,7 @@ t/04-misc.t
 t/05-on_store.t
 t/06-on_collide.t
 t/07-call_errors.t
+t/08-eruct_shapes.t
 t/pod-coverage.t
 t/pod.t
 Makefile.PL
