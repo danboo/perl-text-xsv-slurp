@@ -17,7 +17,7 @@ use constant HOH_HANDLER_SCRATCH_PAD    => 6;
 
 use base 'Exporter';
 
-our @EXPORT = qw/ xsv_slurp /;
+our @EXPORT = qw/ xsv_slurp xsv_eruct /;
 
 =head1 NAME
 
@@ -1154,17 +1154,15 @@ sub _guess_shape
    
    $shape || die 'Error: could not determine data shape (invalid top)';
    
-   my $nested =
-      {
-      a => $data->[0],
-      h => ( values %{ $data } )[0],
-      } -> { $shape };
-              
+   my $nested = $shape eq 'a'
+              ? $data->[0]
+              : ( values %{ $data } )[0];
+
    $nested || die 'Error: could not determine data shape (no nested data)';
    
    $shape .= 'o' . ( $ref_map->{ ref $nested } || '' );
 
-   length $shape != 3 || die 'Error: could not determine data shape (invalid nested)';
+   length $shape == 3 || die 'Error: could not determine data shape (invalid nested)';
 
    return $shape;
    }
