@@ -1187,6 +1187,49 @@ sub _from_aoa
       }
    }
 
+## arguments:
+## $handle - file handle
+## $csv    - the Text::CSV parser object
+## $o      - the user options passed to xsv_slurp   
+sub _from_aoh
+   {
+   my ( $handle, $csv, $o ) = @_;
+   
+   my %headers;
+   
+   for my $row ( @{ $o->{data} } )
+      {
+      
+      for my $h ( keys %{ $row } )
+         {
+         $headers{$h}++;
+         }
+      
+      }
+      
+   my @headers = sort
+      {
+      $headers{$b} <=> $headers{$a} || $a cmp $b
+      }
+      keys %headers;
+
+   $csv->print( $handle, \@headers );
+      
+   print $handle "\n";
+
+   for my $row ( @{ $o->{data} } )
+      {
+      
+      my @row = map { defined $row->{$_} ? $row->{$_} : '' } @headers;
+
+      $csv->print( $handle, \@row );
+
+      print $handle "\n";
+
+      }
+
+   }
+
 =head1 AUTHOR
 
 Dan Boorstein, C<< <dan at boorstein.net> >>
