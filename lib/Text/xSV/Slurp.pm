@@ -1259,6 +1259,30 @@ sub _from_hoa
 
    }
 
+## arguments:
+## $handle - file handle
+## $csv    - the Text::CSV parser object
+## $o      - the user options passed to xsv_slurp   
+sub _from_hoh
+   {
+   my ( $handle, $csv, $o ) = @_;
+   
+   if ( ! $csv->parse($o->{key}) )
+      {
+      confess 'Error: ' . $csv->error_diag;
+      }
+      
+   my @key = $csv->fields;
+   
+   
+
+   }
+   
+sub _iterate_hoh
+   {
+   my ( $hoh, $cb ) = @_;
+   }   
+
 =head1 AUTHOR
 
 Dan Boorstein, C<< <dan at boorstein.net> >>
