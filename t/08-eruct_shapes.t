@@ -98,6 +98,41 @@ my @tests =
    exp  => "c,a,b\n5,1,2\n6,3,4\n7,,\n",
    },
 
+   {
+   name => 'hoh - 1 deep, 1 field',
+   data => { a => { h2 => 1 } },
+   key  => 'h1',
+   exp  => "h1,h2\na,1\n",
+   },
+
+   {
+   name => 'hoh - 1 deep, 2 field',
+   data => { a => { h3 => 3, h2 => 1 } },
+   key  => 'h1',
+   exp  => "h1,h2,h3\na,1,3\n",
+   },
+
+   {
+   name => 'hoh - 1 deep, 2 field, remove',
+   data => { a => { h3 => 3, h2 => 1, h1 => 'c' } },
+   key  => 'h1',
+   exp  => "h1,h2,h3\na,1,3\n",
+   },
+
+   {
+   name => 'hoh - 1 deep, 2 field, remove, 2 rows',
+   data => { a => { h3 => 3, h2 => 1, h1 => 'c' }, b => { h3 => 4, h2 => 2, h1 => 'c' } },
+   key  => 'h1',
+   exp  => "h1,h2,h3\na,1,3\nb,2,4\n",
+   },
+
+   {
+   name => 'hoh - 3 deep, 1 field',
+   data => { a => { b => { c => { h4 => 1, h2 => 2 } } } },
+   key  => 'h1,h2,h3',
+   exp  => "h1,h2,h3,h4\na,b,c,1\n",
+   },
+
    );
    
 plan tests => scalar @tests;   
@@ -106,7 +141,9 @@ for my $test ( @tests )
    {
    my $xsv;
    xsv_eruct( data => $test->{data},
-            string => \$xsv, );
+            string => \$xsv,
+            ( $test->{key} ? ( key => $test->{key} ) : () ),
+            );
    is( $xsv, $test->{exp},  $test->{name} );
    
    }

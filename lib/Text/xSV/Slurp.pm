@@ -6,6 +6,7 @@ use strict;
 use Carp 'confess', 'cluck';
 use Text::CSV;
 use IO::String;
+use Data::Leaf::Walker;
 
 use constant HOH_HANDLER_KEY            => 0;
 use constant HOH_HANDLER_KEY_VALUE_PATH => 1;
@@ -1272,17 +1273,37 @@ sub _from_hoh
       confess 'Error: ' . $csv->error_diag;
       }
       
-   my @key = $csv->fields;
+   my @key        = $csv->fields;
+   my $twig_depth = @key;
+   my $walker     = Data::Leaf::Walker->new( $o->{data}, max_depth => $twig_depth );
    
+   my $sample_twig = ( $walker->each )[1];
    
+   $walker->reset;
+
+   my %headers = %{ $sample_twig };
+   
+   delete @headers{ @key };
+   
+   my @headers = sort keys %headers;
+   
+   $csv->print( $handle, [ @key, @headers ] );
+   
+   print $handle "\n";
+
+   while ( my ( $twig_path, $twig ) = $walker->each )
+      {
+
+      my @values = ( @{ $twig_path }, @{ $twig }{ @headers } );     
+            
+      $csv->print( $handle, \@values );
+
+      print $handle "\n";
+
+      }
 
    }
    
-sub _iterate_hoh
-   {
-   my ( $hoh, $cb ) = @_;
-   }   
-
 =head1 AUTHOR
 
 Dan Boorstein, C<< <dan at boorstein.net> >>
