@@ -14,6 +14,13 @@ my $builder = Module::Build->new(
     },
     add_to_cleanup      => [ 'Text-xSV-Slurp-*' ],
     create_makefile_pl => 'traditional',
+    meta_merge          =>
+       {
+       resources =>
+          {
+          repository  => 'http://github.com/danboo/perl-text-xsv-slurp/',
+          }
+       },
 );
 
 $builder->create_build_script();
