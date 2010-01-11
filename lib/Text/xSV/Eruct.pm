@@ -1,4 +1,4 @@
-package Text::xSV::Slurp;
+package Text::xSV::Eruct;
 
 use warnings;
 use strict;
@@ -6,22 +6,15 @@ use strict;
 use Carp 'confess', 'cluck';
 use Text::CSV;
 use IO::String;
-
-use constant HOH_HANDLER_KEY            => 0;
-use constant HOH_HANDLER_KEY_VALUE_PATH => 1;
-use constant HOH_HANDLER_OLD_VALUE      => 2;
-use constant HOH_HANDLER_NEW_VALUE      => 3;
-use constant HOH_HANDLER_LINE_HASH      => 4;
-use constant HOH_HANDLER_HOH            => 5;
-use constant HOH_HANDLER_SCRATCH_PAD    => 6;
+use Data::Leaf::Walker;
 
 use base 'Exporter';
 
-our @EXPORT = qw/ xsv_slurp /;
+our @EXPORT = qw/ xsv_eruct /;
 
 =head1 NAME
 
-Text::xSV::Slurp - Convert xSV data to common data shapes.
+Text::xSV::Eruct - Convert between xSV format and common data shapes.
 
 =head1 VERSION
 
@@ -335,6 +328,33 @@ full example:
 
 =back
 
+=head2 C<xsv_eruct()>
+
+C<xsv_eruct()> converts nested data structures, of various shapes, to xSV
+(typically CSV) data.
+
+Option summary:
+
+=over
+
+=item * C<data> - data to be convert to xsv
+
+=item * C<file> - file name to be written
+
+=item * C<handle> - file handle to be written to
+
+=item * C<string> - string to be written to
+
+=item * C<col_grep> - skip a subset of columns based on user callback
+
+=item * C<row_grep> - skip a subset of rows based on user callback
+
+=item * C<key> - xSV string or ARRAY used to build the keys of the C<hoh> shape
+
+=item * C<text_csv> - option hash for L<Text::CSV>/L<Text::CSV_XS> constructor
+
+=back
+
 =head1 HoH storage handlers
 
 Using the C<hoh> shape can result in non-unique C<key> combinations. The default
@@ -485,42 +505,25 @@ Carp::cluck if a collision occurs.
 
 =cut
 
-my %to_shape_map =
+my %from_shape_map =
    (
-   'aoa' => \&_as_aoa,
-   'aoh' => \&_as_aoh,
-   'hoa' => \&_as_hoa,
-   'hoh' => \&_as_hoh,
+   'aoa' => \&_from_aoa,
+   'aoh' => \&_from_aoh,
+   'hoa' => \&_from_hoa,
+   'hoh' => \&_from_hoh,
    );
 
-sub xsv_slurp
+sub xsv_eruct
    {
    my @o = @_;
-
-   ## guess the source if there is an odd number of args
-   if ( @o % 2 )
-      {
-      my $src = shift @o;
-      if ( ref $src )
-         {
-         @o = ( handle => $src, @o );
-         }
-      elsif ( $src =~ /[\r\n]/ )
-         {
-         @o = ( string => $src, @o );
-         }
-      else
-         {
-         @o = ( file => $src, @o );
-         }
-      }
-
-   ## convert argument list to option hash 
+   
    my %o = @o;
-
+   
    ## validate the source type   
    my @all_srcs   = qw/ file handle string /;
    my @given_srcs = grep { defined $o{$_} } @all_srcs;
+   
+   my $buffer;
    
    if ( ! @given_srcs )
       {
@@ -530,497 +533,33 @@ sub xsv_slurp
       {
       confess "Error: too many sources given (@given_srcs), specify only one.";
       }
-
-   ## validate the shape      
-   my $shape  = defined $o{'shape'} ? lc $o{'shape'} : 'aoh';
-   my $shaper = $to_shape_map{ $shape };
-   
-   if ( ! $shaper )
-      {
-      my @all_shapes = keys %to_shape_map;
-      confess "Error: unrecognized shape given ($shape). Must be one of: @all_shapes"
-      }
       
-   ## check various global options for expectations
-   if ( defined $o{'col_grep'} && ref $o{'col_grep'} ne 'CODE' )
-      {
-      confess 'Error: col_grep must be a CODE ref';
-      }
-   
-   if ( defined $o{'row_grep'} && ref $o{'row_grep'} ne 'CODE' )
-      {
-      confess 'Error: row_grep must be a CODE ref';
-      }
-
-   ## isolate the source
-   my $src      = $given_srcs[0];
-   
-   ## convert the source to a handle
-   my $handle   = _get_handle( $src => $o{$src}, '<' );
+   ## guess the data shape
+   my $shape  = _guess_shape( $o{data} );
    
    ## create the CSV parser
-   my $csv      = Text::CSV->new( $o{'text_csv'} || () );
+   my $csv    = Text::CSV->new( $o{text_csv} || () );
+
+   ## isolate the source
+   my $src    = $given_srcs[0];
+
+   ## convert the source to a handle
+   my $handle = _get_handle( $src => $o{$src}, '>' );
+
+   ## perform the write
+   $from_shape_map{$shape}->( $handle, $csv, \%o );
    
-   ## run the data conversion
-   my $data     = $shaper->( $handle, $csv, \%o );
-   
+   if ( $src eq 'string' )
+      {
+      ${ $o{string} } = ${ $handle->string_ref };
+      }
+
    if ( $src ne 'handle' )
       {
       close $handle;
       }
    
-   return $data;
    }
-
-## arguments:
-## $handle - file handle
-## $csv    - the Text::CSV parser object
-## $o      - the user options passed to xsv_slurp   
-sub _as_aoa
-   {
-   my ( $handle, $csv, $o ) = @_;
-   
-   my @aoa;
-
-   my @cols;
-   my $col_grep;
-   
-   while ( my $line = $csv->getline($handle) )
-      {
-      
-      ## skip unwanted rows
-      if ( defined $o->{'row_grep'} )
-         {
-         next if ! $o->{'row_grep'}->( $line );
-         }
-      
-      ## remove unwanted cols   
-      if ( defined $o->{'col_grep'} )
-         {
-         if ( ! $col_grep )
-            {
-            $col_grep++;
-            @cols = $o->{'col_grep'}->( 0 .. $#{ $line } );
-            }
-         @{ $line } = @{ $line }[@cols];
-         }
-
-      push @aoa, $line;
-      
-      }
-   
-   return \@aoa;
-   }   
-   
-## arguments:
-## $handle - file handle
-## $csv    - the Text::CSV parser object
-## $o      - the user options passed to xsv_slurp   
-sub _as_aoh
-   {
-   my ( $handle, $csv, $o ) = @_;
-
-   my @aoh;
-   
-   my $header = <$handle>;
-
-   if ( defined $header )
-      {
-   
-      chomp( $header );
-   
-      if ( ! $csv->parse($header) )
-         {
-         confess 'Error: ' . $csv->error_diag;
-         }
-         
-      my @headers = $csv->fields;
-
-      my @grep_headers;
-      
-      if ( defined $o->{'col_grep'} )
-         {
-         @grep_headers = $o->{'col_grep'}->( @headers );
-         }
-      
-      while ( my $line = $csv->getline($handle) )
-         {
-         
-         my %line;
-         
-         @line{ @headers } = @{ $line };
-
-         ## skip unwanted rows
-         if ( defined $o->{'row_grep'} )
-            {
-            next if ! $o->{'row_grep'}->( \%line );
-            }
-
-         ## remove unwanted cols
-         if ( defined $o->{'col_grep'} )
-            {
-            %line = map { $_ => $line{$_} } @grep_headers;
-            }
-            
-         push @aoh, \%line;
-         
-         }
-         
-      }
-
-   return \@aoh;
-   }   
-
-## arguments:
-## $handle - file handle
-## $csv    - the Text::CSV parser object
-## $o      - the user options passed to xsv_slurp   
-sub _as_hoa
-   {
-   my ( $handle, $csv, $o ) = @_;
-
-   my %hoa;
-   
-   my $header = <$handle>;
-
-   if ( defined $header )
-      {
-   
-      chomp( $header );
-
-      if ( ! $csv->parse($header) )
-         {
-         confess 'Error: ' . $csv->error_diag;
-         }
-         
-      my @headers = $csv->fields;
-      
-      my @grep_headers;
-      
-      if ( defined $o->{'col_grep'} )
-         {
-         @grep_headers = $o->{'col_grep'}->( @headers );
-         @hoa{ @grep_headers } = map { [] } @grep_headers;
-         }
-      else
-         {
-         @hoa{ @headers } = map { [] } @headers;
-         }
-      
-      while ( my $line = $csv->getline($handle) )
-         {
-         my %line;
-         
-         @line{ @headers } = @{ $line };
-
-         ## skip unwanted rows
-         if ( defined $o->{'row_grep'} )
-            {
-            next if ! $o->{'row_grep'}->( \%line );
-            }
-
-         ## remove unwanted cols
-         if ( defined $o->{'col_grep'} )
-            {
-            %line = map { $_ => $line{$_} } @grep_headers;
-            }
-
-         for my $k ( keys %line )
-            {
-            push @{ $hoa{$k} }, $line{$k};
-            }
-            
-         }
-         
-      }
-
-   return \%hoa;
-   }
-
-my %named_handlers =
-   (
-   
-## predefined methods for handling hoh storage
-   on_store =>
-      {
-
-      ## count
-      'count' =>  sub
-         {
-         return ( $_[HOH_HANDLER_OLD_VALUE] || 0 ) + 1;
-         },
-
-      ## value histogram (count occurences of each value)
-      'frequency' =>  sub
-         {
-         my $ref = $_[HOH_HANDLER_OLD_VALUE] || {};
-         $ref->{ $_[HOH_HANDLER_NEW_VALUE] } ++;
-         return $ref;
-         },
-      
-      ## push to array
-      'push' =>  sub
-         {
-         my $ref = $_[HOH_HANDLER_OLD_VALUE] || [];
-         push @{ $ref }, $_[HOH_HANDLER_NEW_VALUE]; 
-         return $ref;
-         },
-
-      ## unshift to array
-      'unshift' =>  sub
-         {
-         my $ref = $_[HOH_HANDLER_OLD_VALUE] || [];
-         unshift @{ $ref }, $_[HOH_HANDLER_NEW_VALUE]; 
-         return $ref;
-         },
-         
-      },
-
-   ## predefined methods for handling hoh collisions
-   on_collide =>
-      {
-   
-      ## sum
-      'sum' =>  sub
-         {
-         return ( $_[HOH_HANDLER_OLD_VALUE] || 0 ) + ( $_[HOH_HANDLER_NEW_VALUE] || 0 );
-         },
-
-      ## average
-      'average' =>  sub
-         {
-         if ( ! exists $_[HOH_HANDLER_SCRATCH_PAD]{'count'} )
-            {
-            $_[HOH_HANDLER_SCRATCH_PAD]{'count'} = 1;
-            $_[HOH_HANDLER_SCRATCH_PAD]{'sum'}   = $_[HOH_HANDLER_OLD_VALUE];
-            }
-         $_[HOH_HANDLER_SCRATCH_PAD]{'count'}++;
-         $_[HOH_HANDLER_SCRATCH_PAD]{'sum'} += $_[HOH_HANDLER_NEW_VALUE];
-         return $_[HOH_HANDLER_SCRATCH_PAD]{'sum'} / $_[HOH_HANDLER_SCRATCH_PAD]{'count'};
-         },
-
-      ## die
-      'die' =>  sub
-         {
-         if ( defined $_[HOH_HANDLER_OLD_VALUE] )
-            {
-            my @kv_pairs   = @{ $_[HOH_HANDLER_KEY_VALUE_PATH] };
-            my @kv_strings = map { "{ '$_->[0]' => '$_->[1]' }" } @kv_pairs;
-            my $kv_path    = join ', ', @kv_strings;
-            confess "Error: key collision in HoH construction (key-value path was: $kv_path)";
-            }
-         },
-
-      ## warn
-      'warn' =>  sub
-         {
-         if ( defined $_[HOH_HANDLER_OLD_VALUE] )
-            {
-            my @kv_pairs   = @{ $_[HOH_HANDLER_KEY_VALUE_PATH] };
-            my @kv_strings = map { "{ '$_->[0]' => '$_->[1]' }" } @kv_pairs;
-            my $kv_path    = join ', ', @kv_strings;
-            cluck "Warning: key collision in HoH construction (key-value path was: $kv_path)";
-            }
-         return $_[HOH_HANDLER_NEW_VALUE];
-         },
-
-      ## push to array
-      'push' =>  sub
-         {
-         my $ref = ref $_[HOH_HANDLER_OLD_VALUE]
-                 ? $_[HOH_HANDLER_OLD_VALUE]
-                 : [ $_[HOH_HANDLER_OLD_VALUE] ];
-         push @{ $ref }, $_[HOH_HANDLER_NEW_VALUE]; 
-         return $ref;
-         },
-
-      ## unshift to array
-      'unshift' =>  sub
-         {
-         my $ref = ref $_[HOH_HANDLER_OLD_VALUE]
-                 ? $_[HOH_HANDLER_OLD_VALUE]
-                 : [ $_[HOH_HANDLER_OLD_VALUE] ];
-         unshift @{ $ref }, $_[HOH_HANDLER_NEW_VALUE]; 
-         return $ref;
-         },
-         
-      },
-
-   );
-
-## arguments:
-## $handle - file handle
-## $csv    - the Text::CSV parser object
-## $o      - the user options passed to xsv_slurp   
-sub _as_hoh
-   {
-   my ( $handle, $csv, $o ) = @_;
-
-   my %hoh;
-   
-   my $header = <$handle>;
-
-   if ( defined $header )
-      {
-   
-      chomp( $header );
-
-      if ( ! $csv->parse($header) )
-         {
-         confess 'Error: ' . $csv->error_diag;
-         }
-         
-      my @headers = $csv->fields;
-      
-      my @grep_headers;
-      
-      if ( defined $o->{'col_grep'} )
-         {
-         @grep_headers = $o->{'col_grep'}->( @headers );
-         }
-
-      my @key;
-      
-      if ( ref $o->{'key'} )
-         {
-         
-         @key = @{ $o->{'key'} };
-         
-         }
-      elsif ( defined $o->{'key'} )
-         {
-      
-         if ( ! $csv->parse( $o->{'key'} ) )
-            {
-            confess 'Error: ' . $csv->error_diag;
-            }
-            
-         @key = $csv->fields;
-
-         }
-      else
-         {
-         confess 'Error: no key given for hoh shape';
-         }
-
-      ## set the on_collide handler at the default level and by header
-      my %storage_handlers;
-
-      for my $header ( @headers )
-         {
-         
-         for my $type ( qw/ on_store on_collide / )
-            {
-            
-            my $handler = $o->{$type};
-
-            next if ! $handler;
-            
-            if ( ref $handler eq 'HASH' )
-               {
-               $handler = $handler->{$header};
-               }
-            
-            next if ! $handler;
-
-            if ( ! ref $handler )
-               {
-
-               if ( ! exists $named_handlers{$type}{$handler} )
-                  {
-                  my $all_names = join ', ', sort keys %{ $named_handlers{$type} };
-                  confess "Error: invalid '$type' handler given ($handler). Must be one of: $all_names."
-                  }
-
-               $handler = $named_handlers{$type}{$handler};
-               }
-               
-            confess "Error: cannot set multiple storage handlers for '$header'"
-               if $storage_handlers{$header};
-
-            $storage_handlers{$header}{$type} = $handler;
-            
-            }
-
-         }
-         
-      ## per-header scratch-pads used in collision functions
-      my %scratch_pads = map { $_ => {} } @headers;
-
-      while ( my $line = $csv->getline($handle) )
-         {
-            
-         my %line;
-         
-         @line{ @headers } = @{ $line };
-         
-         ## skip unwanted rows
-         if ( defined $o->{'row_grep'} )
-            {
-            next if ! $o->{'row_grep'}->( \%line );
-            }
-
-         ## step through the nested keys
-         my $leaf = \%hoh;
-         
-         my @val;
-         
-         for my $k ( @key )
-            {
-            
-            my $v         = $line{$k};
-            $leaf->{$v} ||= {};
-            $leaf         = $leaf->{$v};
-            
-            push @val, $v;
-            
-            }
-         
-         ## remove key headers from the line   
-         delete @line{ @key };
-         
-         ## remove unwanted cols
-         if ( defined $o->{'col_grep'} )
-            {
-            %line = map { $_ => $line{$_} } @grep_headers;
-            }
-
-         ## perform the aggregation if applicable            
-         for my $key ( keys %line )
-            {
-
-            my $new_value = $line{$key};
-
-            my $on_collide = $storage_handlers{$key}{'on_collide'};
-            my $on_store   = $storage_handlers{$key}{'on_store'};
-            
-            if ( $on_store || $on_collide && exists $leaf->{$key} )
-               {
-               
-               my $handler = $on_collide || $on_store;
-
-               $new_value = $handler->(
-                  $key,                                         ## HOH_HANDLER_KEY
-                  [ map [ $key[$_] => $val[$_] ], 0 .. $#key ], ## HOH_HANDLER_KEY_VALUE_PATH
-                  $leaf->{$key},                                ## HOH_HANDLER_OLD_VALUE
-                  $new_value,                                   ## HOH_HANDLER_NEW_VALUE
-                  \%line,                                       ## HOH_HANDLER_LINE_HASH
-                  \%hoh,                                        ## HOH_HANDLER_HOH
-                  $scratch_pads{$key},                          ## HOH_HANDLER_SCRATCH_PAD
-                  );
-
-               }
-
-            $leaf->{$key} = $new_value;
-
-            }
-            
-         }
-         
-     }
-
-   return \%hoh;
-   }   
 
 ## arguments:
 ## $src_type  - type of data source, handle, string or file
@@ -1053,6 +592,173 @@ sub _get_handle
    confess "Error: could not determine source type";
    }
 
+{
+
+my $ref_map =
+   {
+   'HASH' => 'h',
+   'ARRAY' => 'a',
+   };
+
+## arguments:
+## $data: the data structure to be eructed
+sub _guess_shape
+   {
+   my ( $data ) = @_;
+   
+   my $shape = $ref_map->{ ref $data } || '';
+   
+   $shape || die 'Error: could not determine data shape (invalid top)';
+   
+   my $nested = $shape eq 'a'
+              ? $data->[0]
+              : ( values %{ $data } )[0];
+
+   $nested || die 'Error: could not determine data shape (no nested data)';
+   
+   $shape .= 'o' . ( $ref_map->{ ref $nested } || '' );
+
+   length $shape == 3 || die 'Error: could not determine data shape (invalid nested)';
+
+   return $shape;
+   }
+
+}
+
+## arguments:
+## $handle - file handle
+## $csv    - the Text::CSV parser object
+## $o      - the user options passed to xsv_slurp   
+sub _from_aoa
+   {
+   my ( $handle, $csv, $o ) = @_;
+   
+   for my $row ( @{ $o->{data} } )
+      {
+      
+      $csv->print( $handle, $row );
+      
+      print $handle "\n";
+      
+      }
+   }
+
+## arguments:
+## $handle - file handle
+## $csv    - the Text::CSV parser object
+## $o      - the user options passed to xsv_slurp   
+sub _from_aoh
+   {
+   my ( $handle, $csv, $o ) = @_;
+   
+   my %headers;
+   
+   for my $row ( @{ $o->{data} } )
+      {
+      
+      for my $h ( keys %{ $row } )
+         {
+         $headers{$h}++;
+         }
+      
+      }
+      
+   my @headers = sort
+      {
+      $headers{$b} <=> $headers{$a} || $a cmp $b
+      }
+      keys %headers;
+
+   $csv->print( $handle, \@headers );
+      
+   print $handle "\n";
+
+   for my $row ( @{ $o->{data} } )
+      {
+      
+      my @row = map { defined $row->{$_} ? $row->{$_} : '' } @headers;
+
+      $csv->print( $handle, \@row );
+
+      print $handle "\n";
+
+      }
+
+   }
+
+## arguments:
+## $handle - file handle
+## $csv    - the Text::CSV parser object
+## $o      - the user options passed to xsv_slurp   
+sub _from_hoa
+   {
+   my ( $handle, $csv, $o ) = @_;
+   
+   my @headers = sort
+      {
+      $#{ $o->{data}{$b} } <=> $#{ $o->{data}{$a} } || $a cmp $b
+      }
+      keys %{ $o->{data} };   
+   
+   $csv->print( $handle, \@headers );
+      
+   print $handle "\n";
+   
+   for my $row_i ( 0 .. $#{ $o->{data}{$headers[0]} } )
+      {
+      my @row = map { my $r = $o->{data}{$_}[$row_i]; defined $r ? $r : '' } @headers;
+
+      $csv->print( $handle, \@row );
+
+      print $handle "\n";
+      }
+
+   }
+
+## arguments:
+## $handle - file handle
+## $csv    - the Text::CSV parser object
+## $o      - the user options passed to xsv_slurp   
+sub _from_hoh
+   {
+   my ( $handle, $csv, $o ) = @_;
+   
+   if ( ! $csv->parse($o->{key}) )
+      {
+      confess 'Error: ' . $csv->error_diag;
+      }
+      
+   my @key        = $csv->fields;
+   my $twig_depth = @key;
+   my $walker     = Data::Leaf::Walker->new( $o->{data}, max_depth => $twig_depth );
+   
+   my $sample_twig = ( $walker->each )[1];
+   
+   $walker->reset;
+
+   my %headers = %{ $sample_twig };
+   
+   delete @headers{ @key };
+   
+   my @headers = sort keys %headers;
+   
+   $csv->print( $handle, [ @key, @headers ] );
+   
+   print $handle "\n";
+
+   while ( my ( $twig_path, $twig ) = $walker->each )
+      {
+
+      my @values = ( @{ $twig_path }, @{ $twig }{ @headers } );     
+            
+      $csv->print( $handle, \@values );
+
+      print $handle "\n";
+
+      }
+
+   }
+   
 =head1 AUTHOR
 
 Dan Boorstein, C<< <dan at boorstein.net> >>
@@ -1064,6 +770,8 @@ Dan Boorstein, C<< <dan at boorstein.net> >>
 =item * add creation synthetic/derived cols
 
 =item * allow col_grep to be an array ref of indexes or column names
+
+=item * add xsv_eruct() to dump shapes to xsv data
 
 =item * add weighted-average collide keys and tests
 

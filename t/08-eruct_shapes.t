@@ -3,7 +3,7 @@ use strict;
 
 use Test::More;
 
-use Text::xSV::Slurp;
+use Text::xSV::Eruct;
 
 my @tests =
    (
