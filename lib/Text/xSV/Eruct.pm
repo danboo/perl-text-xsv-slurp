@@ -74,6 +74,10 @@ Option summary:
 
 =back
 
+The C<file>, C<handle> and C<string> options are mutually exclusive. Only one
+destination parameter may be passed in each call to C<xsv_eruct()>, otherwise a
+fatal exception will be raised.
+
 =cut
 
 my %from_shape_map =
@@ -88,21 +92,39 @@ sub xsv_eruct
    {
    my @o = @_;
    
+   ## guess the destination if there is an odd number of args
+   if ( @o % 2 )
+      {
+      my $dst = shift @o;
+      if ( ref $dst eq 'GLOB' )
+         {
+         @o = ( handle => $dst, @o );
+         }
+      elsif ( ref $dst eq 'SCALAR' )
+         {
+         @o = ( string => $dst, @o );
+         }
+      else
+         {
+         @o = ( file => $dst, @o );
+         }
+      }
+
    my %o = @o;
    
-   ## validate the source type   
-   my @all_srcs   = qw/ file handle string /;
-   my @given_srcs = grep { defined $o{$_} } @all_srcs;
+   ## validate the destination type   
+   my @all_dsts   = qw/ file handle string /;
+   my @given_dsts = grep { defined $o{$_} } @all_dsts;
    
    my $buffer;
    
-   if ( ! @given_srcs )
+   if ( ! @given_dsts )
       {
-      confess "Error: no source given, specify one of: @all_srcs.";
+      confess "Error: no destination given, specify one of: @all_dsts.";
       }
-   elsif ( @given_srcs > 1 )
+   elsif ( @given_dsts > 1 )
       {
-      confess "Error: too many sources given (@given_srcs), specify only one.";
+      confess "Error: too many destinations given (@given_dsts), specify only one.";
       }
       
    ## guess the data shape
@@ -111,21 +133,21 @@ sub xsv_eruct
    ## create the CSV parser
    my $csv    = Text::CSV->new( $o{text_csv} || () );
 
-   ## isolate the source
-   my $src    = $given_srcs[0];
+   ## isolate the destination
+   my $dst    = $given_dsts[0];
 
-   ## convert the source to a handle
-   my $handle = _get_handle( $src => $o{$src}, '>' );
+   ## convert the destination to a handle
+   my $handle = _get_handle( $dst => $o{$dst}, '>' );
 
    ## perform the write
    $from_shape_map{$shape}->( $handle, $csv, \%o );
    
-   if ( $src eq 'string' )
+   if ( $dst eq 'string' )
       {
       ${ $o{string} } = ${ $handle->string_ref };
       }
 
-   if ( $src ne 'handle' )
+   if ( $dst ne 'handle' )
       {
       close $handle;
       }
@@ -133,34 +155,34 @@ sub xsv_eruct
    }
 
 ## arguments:
-## $src_type  - type of data source, handle, string or file
-## $src_value - the file name, file handle or xSV string
+## $dst_type  - type of data destination, handle, string or file
+## $dst_value - the file name, file handle or xSV string
 sub _get_handle
    {
-   my ( $src_type, $src_value, $mode ) = @_;
+   my ( $dst_type, $dst_value, $mode ) = @_;
 
-   if ( $src_type eq 'handle' )
+   if ( $dst_type eq 'handle' )
       {
-      return $src_value;
+      return $dst_value;
       }
 
-   if ( $src_type eq 'string' )
+   if ( $dst_type eq 'string' )
       {
-      if ( ref $src_value )
+      if ( ref $dst_value )
          {
-         $src_value = ${ $src_value };
+         $dst_value = ${ $dst_value };
          }
-      my $handle = IO::String->new( $mode eq '<' ? $src_value : () );
+      my $handle = IO::String->new( $mode eq '<' ? $dst_value : () );
       return $handle;
       }
 
-   if ( $src_type eq 'file' )
+   if ( $dst_type eq 'file' )
       {
-      open( my $handle, $mode, $src_value ) || confess "Error: could not open '$src_value': $!";
+      open( my $handle, $mode, $dst_value ) || confess "Error: could not open '$dst_value': $!";
       return $handle;
       }
 
-   confess "Error: could not determine source type";
+   confess "Error: could not determine destination type";
    }
 
 {
@@ -349,18 +371,6 @@ Dan Boorstein, C<< <dan at boorstein.net> >>
 
 =over
 
-=item * add creation synthetic/derived cols
-
-=item * allow col_grep to be an array ref of indexes or column names
-
-=item * add xsv_eruct() to dump shapes to xsv data
-
-=item * add weighted-average collide keys and tests
-
-=item * document hoh 'on_store/on_collide' custom keys
-
-=item * add a recipes/examples section to cover grep and on_collide examples
-
 =back
 
 =head1 BUGS
@@ -374,7 +384,7 @@ automatically be notified of progress on your bug as I make changes.
 
 You can find documentation for this module with the perldoc command.
 
-    perldoc Text::xSV::Slurp
+    perldoc Text::xSV::Eruct
 
 
 You can also look for information at:
