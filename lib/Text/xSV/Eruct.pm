@@ -66,13 +66,9 @@ Option summary:
 
 =item * C<handle> - file handle to be written to
 
-=item * C<string> - string to be written to
+=item * C<string> - string to be written to (a scalar ref)
 
-=item * C<col_grep> - skip a subset of columns based on user callback
-
-=item * C<row_grep> - skip a subset of rows based on user callback
-
-=item * C<key> - xSV string or ARRAY used to build the keys of the C<hoh> shape
+=item * C<key> - xSV string or ARRAY used to build the headers of the C<hoh> shape
 
 =item * C<text_csv> - option hash for L<Text::CSV>/L<Text::CSV_XS> constructor
 
@@ -298,12 +294,23 @@ sub _from_hoh
    {
    my ( $handle, $csv, $o ) = @_;
    
-   if ( ! $csv->parse($o->{key}) )
+   my @key;
+
+   if ( ref $o->{key} )
       {
-      confess 'Error: ' . $csv->error_diag;
+      @key = @{ $o->{key} };
       }
-      
-   my @key        = $csv->fields;
+   else
+      {
+
+      if ( ! $csv->parse($o->{key}) )
+         {
+         confess 'Error: ' . $csv->error_diag;
+         }
+
+      @key = $csv->fields;
+      }
+
    my $twig_depth = @key;
    my $walker     = Data::Leaf::Walker->new( $o->{data}, max_depth => $twig_depth );
    

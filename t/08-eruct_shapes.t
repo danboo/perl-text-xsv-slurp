@@ -133,6 +133,13 @@ my @tests =
    exp  => "h1,h2,h3,h4\na,b,c,1\n",
    },
 
+   {
+   name => 'hoh - 3 deep, 1 field',
+   data => { a => { b => { c => { h4 => 1, h2 => 2 } } } },
+   key  => [ qw/ h1 h2 h3 / ],
+   exp  => "h1,h2,h3,h4\na,b,c,1\n",
+   },
+
    );
    
 plan tests => scalar @tests;   
