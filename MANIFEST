@@ -13,6 +13,7 @@ t/06-on_collide.t
 t/07-call_errors.t
 t/08-eruct_shapes.t
 t/09-eruct_errors.t
+t/10-eruct_row_grep.t
 t/pod-coverage.t
 t/pod.t
 Makefile.PL
