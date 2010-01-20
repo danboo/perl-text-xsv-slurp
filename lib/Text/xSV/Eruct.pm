@@ -78,6 +78,19 @@ The C<file>, C<handle> and C<string> options are mutually exclusive. Only one
 destination parameter may be passed in each call to C<xsv_eruct()>, otherwise a
 fatal exception will be raised.
 
+Unlike C<xsv_slurp()>, you do not need to specify the C<shape> parameter, since
+it can be determined via inspection of the given C<data>.
+
+The C<text_csv> option can be used to control L<Text::CSV>/L<Text::CSV_XS>
+construction. The given HASH reference is passed to the L<Text::CSV>
+constructor. If the C<text_csv> option is undefined, the default L<Text::CSV>
+constructor is called. For example, to change the separator to a colon, you
+could do the following:
+
+   xsv_eruct( file => 'foo.csv',
+              data => $hoh,
+          text_csv => { sep_char => ':' } );
+
 =cut
 
 my %from_shape_map =
