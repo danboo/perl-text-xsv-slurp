@@ -334,7 +334,11 @@ sub _from_hoh
       }
 
    my $twig_depth = @key;
-   my $walker     = Data::Leaf::Walker->new( $o->{data}, max_depth => $twig_depth );
+   my $walker     = Data::Leaf::Walker->new(
+                       $o->{data},
+                       max_depth => $twig_depth,
+                       min_depth => $twig_depth,
+                       );
    
    my $sample_twig = ( $walker->each )[1];
    
