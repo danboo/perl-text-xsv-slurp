@@ -202,7 +202,7 @@ sub _get_handle
 
 my $ref_map =
    {
-   'HASH' => 'h',
+   'HASH'  => 'h',
    'ARRAY' => 'a',
    };
 
@@ -241,6 +241,12 @@ sub _from_aoa
    
    for my $row ( @{ $o->{data} } )
       {
+      
+      ## skip unwanted rows
+      if ( defined $o->{'row_grep'} )
+         {
+         next if ! $o->{'row_grep'}->( $row );
+         }
       
       $csv->print( $handle, $row );
       
@@ -281,7 +287,13 @@ sub _from_aoh
 
    for my $row ( @{ $o->{data} } )
       {
-      
+
+      ## skip unwanted rows
+      if ( defined $o->{'row_grep'} )
+         {
+         next if ! $o->{'row_grep'}->( $row );
+         }
+     
       my @row = map { defined $row->{$_} ? $row->{$_} : '' } @headers;
 
       $csv->print( $handle, \@row );
@@ -314,6 +326,13 @@ sub _from_hoa
       {
       my @row = map { my $r = $o->{data}{$_}[$row_i]; defined $r ? $r : '' } @headers;
 
+      ## skip unwanted rows
+      if ( defined $o->{'row_grep'} )
+         {
+         my %row = map { $headers[$_] => $row[$_] } 0 .. $#headers;
+         next if ! $o->{'row_grep'}->( \%row );
+         }
+     
       $csv->print( $handle, \@row );
 
       print $handle "\n";
@@ -363,16 +382,25 @@ sub _from_hoh
    
    my @headers = sort keys %headers;
    
-   $csv->print( $handle, [ @key, @headers ] );
+   my @all_headers = ( @key, @headers );
+   
+   $csv->print( $handle, \@all_headers );
    
    print $handle "\n";
 
    while ( my ( $twig_path, $twig ) = $walker->each )
       {
 
-      my @values = ( @{ $twig_path }, @{ $twig }{ @headers } );     
+      my @row = ( @{ $twig_path }, @{ $twig }{ @headers } );     
             
-      $csv->print( $handle, \@values );
+      ## skip unwanted rows
+      if ( defined $o->{'row_grep'} )
+         {
+         my %row = map { $all_headers[$_] => $row[$_] } 0 .. $#all_headers;
+         next if ! $o->{'row_grep'}->( \%row );
+         }
+     
+      $csv->print( $handle, \@row );
 
       print $handle "\n";
 
