@@ -87,9 +87,120 @@ constructor. If the C<text_csv> option is undefined, the default L<Text::CSV>
 constructor is called. For example, to change the separator to a colon, you
 could do the following:
 
-   xsv_eruct( file => 'foo.csv',
-              data => $hoh,
+   xsv_eruct( data => $hoh,
+              file => 'foo.csv',
           text_csv => { sep_char => ':' } );
+
+=head3 aoa
+
+=over
+
+example input:
+
+   [
+      [ qw/ h1 h2 h3 / ],
+      [ qw/ l  m  n  / ],
+      [ qw/ p  q  r  / ],
+   ]
+
+example output:
+
+   h1,h2,h3
+   l,m,n
+   p,q,r
+
+code example:
+
+   ## - convert an array of arrays to xSV format
+
+   xsv_eruct( data   => $aoa,
+              string => \$xsv_data,
+            );
+
+=back
+
+=head3 aoh
+
+=over
+
+example input:
+
+   [
+      { h1 => 'l', h2 => 'm', h3 => 'n' },
+      { h1 => 'p', h2 => 'q', h3 => 'r' },
+   ]
+
+example output:
+
+   h1,h2,h3
+   l,m,n
+   p,q,r
+
+code example:
+
+   ## - convert an array of hashes to xSV format
+
+   xsv_eruct( data   => $aoh,
+              string => \$xsv_data,
+            );
+
+=back
+
+=head3 hoa
+
+=over
+
+example input:
+
+   {
+      h1 => [ qw/ l p / ],
+      h2 => [ qw/ m q / ],
+      h3 => [ qw/ n r / ],
+   }
+
+example output:
+
+   h1,h2,h3
+   l,m,n
+   p,q,r
+
+code example:
+
+   ## - convert a hash of arrays to xSV format
+
+   xsv_eruct( data   => $hoa,
+              string => \$xsv_data,
+            );
+
+=back
+
+=head3 hoh
+
+=over
+
+example input:
+
+   {
+   l => { m => { h3 => 'n' } },
+   p => { q => { h3 => 'r' } },
+   }
+
+example output (assuming a C<key> of C<'h1,h2'>):
+
+   h1,h2,h3
+   l,m,n
+   p,q,r
+
+code example:
+
+   ## - convert a hash of arrays to xSV format
+
+   xsv_eruct( data   => $hoh,
+               key   => 'h1,h2',
+              string => \$xsv_data,
+            );
+
+=back
 
 =cut
 
@@ -241,17 +352,8 @@ sub _from_aoa
    
    for my $row ( @{ $o->{data} } )
       {
-      
-      ## skip unwanted rows
-      if ( defined $o->{'row_grep'} )
-         {
-         next if ! $o->{'row_grep'}->( $row );
-         }
-      
       $csv->print( $handle, $row );
-      
       print $handle "\n";
-      
       }
    }
 
@@ -288,12 +390,6 @@ sub _from_aoh
    for my $row ( @{ $o->{data} } )
       {
 
-      ## skip unwanted rows
-      if ( defined $o->{'row_grep'} )
-         {
-         next if ! $o->{'row_grep'}->( $row );
-         }
-     
       my @row = map { defined $row->{$_} ? $row->{$_} : '' } @headers;
 
       $csv->print( $handle, \@row );
@@ -326,13 +422,6 @@ sub _from_hoa
       {
       my @row = map { my $r = $o->{data}{$_}[$row_i]; defined $r ? $r : '' } @headers;
 
-      ## skip unwanted rows
-      if ( defined $o->{'row_grep'} )
-         {
-         my %row = map { $headers[$_] => $row[$_] } 0 .. $#headers;
-         next if ! $o->{'row_grep'}->( \%row );
-         }
-     
       $csv->print( $handle, \@row );
 
       print $handle "\n";
@@ -393,13 +482,6 @@ sub _from_hoh
 
       my @row = ( @{ $twig_path }, @{ $twig }{ @headers } );     
             
-      ## skip unwanted rows
-      if ( defined $o->{'row_grep'} )
-         {
-         my %row = map { $all_headers[$_] => $row[$_] } 0 .. $#all_headers;
-         next if ! $o->{'row_grep'}->( \%row );
-         }
-     
       $csv->print( $handle, \@row );
 
       print $handle "\n";
