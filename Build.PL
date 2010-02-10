@@ -12,6 +12,7 @@ my $builder = Module::Build->new(
         'Text::CSV'          => 0,
         'IO::String'         => 0,
         'Data::Leaf::Walker' => '0.20',
+        'Want'               => '0.18',
     },
     add_to_cleanup      => [ 'Text-xSV-Slurp-*' ],
     create_makefile_pl => 'traditional',

@@ -3,10 +3,12 @@ package Text::xSV::Eruct;
 use warnings;
 use strict;
 
+use Want;
 use Carp 'confess', 'cluck';
 use Text::CSV;
 use IO::String;
 use Data::Leaf::Walker;
+
 
 use base 'Exporter';
 
@@ -77,6 +79,11 @@ Option summary:
 The C<file>, C<handle> and C<string> options are mutually exclusive. Only one
 destination parameter may be passed in each call to C<xsv_eruct()>, otherwise a
 fatal exception will be raised.
+
+If none of the destination parameters is given, and the C<xsv_eruct()> is called
+in an assignment, it returns a string of the xSV data.
+
+   my $csv_string = xsv_eruct( data => $hoh );
 
 Unlike C<xsv_slurp()>, you do not need to specify the C<shape> parameter, since
 it can be determined via inspection of the given C<data>.
@@ -240,8 +247,12 @@ sub xsv_eruct
    my @all_dsts   = qw/ file handle string /;
    my @given_dsts = grep { defined $o{$_} } @all_dsts;
    
-   my $buffer;
-   
+   if ( ! @given_dsts && want(1) )
+      {
+      $o{string} = \my $return_buffer;
+      push @given_dsts, 'string';
+      }
+
    if ( ! @given_dsts )
       {
       confess "Error: no destination given, specify one of: @all_dsts.";
@@ -276,6 +287,9 @@ sub xsv_eruct
       close $handle;
       }
    
+   return want(1) && $dst eq 'string'
+        ? ${ $o{string} }
+        : ();
    }
 
 ## arguments:
