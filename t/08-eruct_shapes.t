@@ -146,16 +146,16 @@ plan tests => 2 * @tests;
          
 for my $test ( @tests )
    {
-   my $xsv;
+   my $xsv = xsv_eruct( data => $test->{data},
+                      ( $test->{key} ? ( key => $test->{key} ) : () ),
+                      );
+   is( $xsv, $test->{exp},  "$test->{name} (return)" );
+
    xsv_eruct( data => $test->{data},
             string => \$xsv,
             ( $test->{key} ? ( key => $test->{key} ) : () ),
             );
    is( $xsv, $test->{exp},  $test->{name} );
-   
-   $xsv = xsv_eruct( data => $test->{data},
-                   ( $test->{key} ? ( key => $test->{key} ) : () ),
-                   );
-   is( $xsv, $test->{exp},  "$test->{name} (return)" );
+
    }
          
