@@ -603,6 +603,11 @@ sub _as_aoa
       push @aoa, $line;
       
       }
+      
+   if ( ! $csv->eof )
+      {
+      confess 'Error: ' . $csv->error_diag;
+      }
    
    return \@aoa;
    }   
@@ -617,52 +622,52 @@ sub _as_aoh
 
    my @aoh;
    
-   my $header = <$handle>;
-
-   if ( defined $header )
+   my $headers = $csv->getline($handle);
+   
+   return \@aoh if $csv->eof;
+   
+   if ( ! defined $headers )
       {
+      confess 'Error: ' . $csv->error_diag;
+      }
    
-      chomp( $header );
-   
-      if ( ! $csv->parse($header) )
-         {
-         confess 'Error: ' . $csv->error_diag;
-         }
-         
-      my @headers = $csv->fields;
+   my @headers = @{ $headers };
 
-      my @grep_headers;
+   my @grep_headers;
       
+   if ( defined $o->{'col_grep'} )
+      {
+      @grep_headers = $o->{'col_grep'}->( @headers );
+      }
+      
+   while ( my $line = $csv->getline($handle) )
+      {
+         
+      my %line;
+         
+      @line{ @headers } = @{ $line };
+
+      ## skip unwanted rows
+      if ( defined $o->{'row_grep'} )
+         {
+         next if ! $o->{'row_grep'}->( \%line );
+         }
+
+      ## remove unwanted cols
       if ( defined $o->{'col_grep'} )
          {
-         @grep_headers = $o->{'col_grep'}->( @headers );
+         %line = map { $_ => $line{$_} } @grep_headers;
          }
+         
+      push @aoh, \%line;
       
-      while ( my $line = $csv->getline($handle) )
-         {
-         
-         my %line;
-         
-         @line{ @headers } = @{ $line };
-
-         ## skip unwanted rows
-         if ( defined $o->{'row_grep'} )
-            {
-            next if ! $o->{'row_grep'}->( \%line );
-            }
-
-         ## remove unwanted cols
-         if ( defined $o->{'col_grep'} )
-            {
-            %line = map { $_ => $line{$_} } @grep_headers;
-            }
-            
-         push @aoh, \%line;
-         
-         }
-         
       }
-
+      
+   if ( ! $csv->eof )
+      {
+      confess 'Error: ' . $csv->error_diag;
+      }
+   
    return \@aoh;
    }   
 
@@ -676,59 +681,59 @@ sub _as_hoa
 
    my %hoa;
    
-   my $header = <$handle>;
-
-   if ( defined $header )
-      {
+   my $headers = $csv->getline($handle);
    
-      chomp( $header );
+   return \%hoa if $csv->eof;
+   
+   if ( ! defined $headers )
+      {
+      confess 'Error: ' . $csv->error_diag;
+      }
+   
+   my @headers = @{ $headers };
+   
+   my @grep_headers;
+   
+   if ( defined $o->{'col_grep'} )
+      {
+      @grep_headers = $o->{'col_grep'}->( @headers );
+      @hoa{ @grep_headers } = map { [] } @grep_headers;
+      }
+   else
+      {
+      @hoa{ @headers } = map { [] } @headers;
+      }
+   
+   while ( my $line = $csv->getline($handle) )
+      {
+      my %line;
+      
+      @line{ @headers } = @{ $line };
 
-      if ( ! $csv->parse($header) )
+      ## skip unwanted rows
+      if ( defined $o->{'row_grep'} )
          {
-         confess 'Error: ' . $csv->error_diag;
+         next if ! $o->{'row_grep'}->( \%line );
          }
-         
-      my @headers = $csv->fields;
-      
-      my @grep_headers;
-      
+
+      ## remove unwanted cols
       if ( defined $o->{'col_grep'} )
          {
-         @grep_headers = $o->{'col_grep'}->( @headers );
-         @hoa{ @grep_headers } = map { [] } @grep_headers;
+         %line = map { $_ => $line{$_} } @grep_headers;
          }
-      else
+
+      for my $k ( keys %line )
          {
-         @hoa{ @headers } = map { [] } @headers;
-         }
-      
-      while ( my $line = $csv->getline($handle) )
-         {
-         my %line;
-         
-         @line{ @headers } = @{ $line };
-
-         ## skip unwanted rows
-         if ( defined $o->{'row_grep'} )
-            {
-            next if ! $o->{'row_grep'}->( \%line );
-            }
-
-         ## remove unwanted cols
-         if ( defined $o->{'col_grep'} )
-            {
-            %line = map { $_ => $line{$_} } @grep_headers;
-            }
-
-         for my $k ( keys %line )
-            {
-            push @{ $hoa{$k} }, $line{$k};
-            }
-            
+         push @{ $hoa{$k} }, $line{$k};
          }
          
       }
-
+      
+   if ( ! $csv->eof )
+      {
+      confess 'Error: ' . $csv->error_diag;
+      }
+   
    return \%hoa;
    }
 
@@ -853,167 +858,167 @@ sub _as_hoh
 
    my %hoh;
    
-   my $header = <$handle>;
+   my $headers = $csv->getline($handle);
+   
+   return \%hoh if $csv->eof;
+   
+   if ( ! defined $headers )
+      {
+      confess 'Error: ' . $csv->error_diag;
+      }
+   
+   my @headers = @{ $headers };
+   
+   my @grep_headers;
+   
+   if ( defined $o->{'col_grep'} )
+      {
+      @grep_headers = $o->{'col_grep'}->( @headers );
+      }
 
-   if ( defined $header )
+   my @key;
+   
+   if ( ref $o->{'key'} )
+      {
+      
+      @key = @{ $o->{'key'} };
+      
+      }
+   elsif ( defined $o->{'key'} )
       {
    
-      chomp( $header );
-
-      if ( ! $csv->parse($header) )
+      if ( ! $csv->parse( $o->{'key'} ) )
          {
          confess 'Error: ' . $csv->error_diag;
          }
          
-      my @headers = $csv->fields;
+      @key = $csv->fields;
+
+      }
+   else
+      {
+      confess 'Error: no key given for hoh shape';
+      }
+
+   ## set the on_collide handler at the default level and by header
+   my %storage_handlers;
+
+   for my $header ( @headers )
+      {
       
-      my @grep_headers;
+      for my $type ( qw/ on_store on_collide / )
+         {
+         
+         my $handler = $o->{$type};
+
+         next if ! $handler;
+         
+         if ( ref $handler eq 'HASH' )
+            {
+            $handler = $handler->{$header};
+            }
+         
+         next if ! $handler;
+
+         if ( ! ref $handler )
+            {
+
+            if ( ! exists $named_handlers{$type}{$handler} )
+               {
+               my $all_names = join ', ', sort keys %{ $named_handlers{$type} };
+               confess "Error: invalid '$type' handler given ($handler). Must be one of: $all_names."
+               }
+
+            $handler = $named_handlers{$type}{$handler};
+            }
+            
+         confess "Error: cannot set multiple storage handlers for '$header'"
+            if $storage_handlers{$header};
+
+         $storage_handlers{$header}{$type} = $handler;
+         
+         }
+
+      }
       
+   ## per-header scratch-pads used in collision functions
+   my %scratch_pads = map { $_ => {} } @headers;
+
+   while ( my $line = $csv->getline($handle) )
+      {
+         
+      my %line;
+      
+      @line{ @headers } = @{ $line };
+      
+      ## skip unwanted rows
+      if ( defined $o->{'row_grep'} )
+         {
+         next if ! $o->{'row_grep'}->( \%line );
+         }
+
+      ## step through the nested keys
+      my $leaf = \%hoh;
+      
+      my @val;
+      
+      for my $k ( @key )
+         {
+         
+         my $v         = $line{$k};
+         $leaf->{$v} ||= {};
+         $leaf         = $leaf->{$v};
+         
+         push @val, $v;
+         
+         }
+      
+      ## remove key headers from the line   
+      delete @line{ @key };
+      
+      ## remove unwanted cols
       if ( defined $o->{'col_grep'} )
          {
-         @grep_headers = $o->{'col_grep'}->( @headers );
+         %line = map { $_ => $line{$_} } @grep_headers;
          }
 
-      my @key;
+      ## perform the aggregation if applicable            
+      for my $key ( keys %line )
+         {
+
+         my $new_value = $line{$key};
+
+         my $on_collide = $storage_handlers{$key}{'on_collide'};
+         my $on_store   = $storage_handlers{$key}{'on_store'};
+         
+         if ( $on_store || $on_collide && exists $leaf->{$key} )
+            {
+            
+            my $handler = $on_collide || $on_store;
+
+            $new_value = $handler->(
+               $key,                                         ## HOH_HANDLER_KEY
+               [ map [ $key[$_] => $val[$_] ], 0 .. $#key ], ## HOH_HANDLER_KEY_VALUE_PATH
+               $leaf->{$key},                                ## HOH_HANDLER_OLD_VALUE
+               $new_value,                                   ## HOH_HANDLER_NEW_VALUE
+               \%line,                                       ## HOH_HANDLER_LINE_HASH
+               \%hoh,                                        ## HOH_HANDLER_HOH
+               $scratch_pads{$key},                          ## HOH_HANDLER_SCRATCH_PAD
+               );
+
+            }
+
+         $leaf->{$key} = $new_value;
+
+         }
+         
+      }
       
-      if ( ref $o->{'key'} )
-         {
-         
-         @key = @{ $o->{'key'} };
-         
-         }
-      elsif ( defined $o->{'key'} )
-         {
-      
-         if ( ! $csv->parse( $o->{'key'} ) )
-            {
-            confess 'Error: ' . $csv->error_diag;
-            }
-            
-         @key = $csv->fields;
-
-         }
-      else
-         {
-         confess 'Error: no key given for hoh shape';
-         }
-
-      ## set the on_collide handler at the default level and by header
-      my %storage_handlers;
-
-      for my $header ( @headers )
-         {
-         
-         for my $type ( qw/ on_store on_collide / )
-            {
-            
-            my $handler = $o->{$type};
-
-            next if ! $handler;
-            
-            if ( ref $handler eq 'HASH' )
-               {
-               $handler = $handler->{$header};
-               }
-            
-            next if ! $handler;
-
-            if ( ! ref $handler )
-               {
-
-               if ( ! exists $named_handlers{$type}{$handler} )
-                  {
-                  my $all_names = join ', ', sort keys %{ $named_handlers{$type} };
-                  confess "Error: invalid '$type' handler given ($handler). Must be one of: $all_names."
-                  }
-
-               $handler = $named_handlers{$type}{$handler};
-               }
-               
-            confess "Error: cannot set multiple storage handlers for '$header'"
-               if $storage_handlers{$header};
-
-            $storage_handlers{$header}{$type} = $handler;
-            
-            }
-
-         }
-         
-      ## per-header scratch-pads used in collision functions
-      my %scratch_pads = map { $_ => {} } @headers;
-
-      while ( my $line = $csv->getline($handle) )
-         {
-            
-         my %line;
-         
-         @line{ @headers } = @{ $line };
-         
-         ## skip unwanted rows
-         if ( defined $o->{'row_grep'} )
-            {
-            next if ! $o->{'row_grep'}->( \%line );
-            }
-
-         ## step through the nested keys
-         my $leaf = \%hoh;
-         
-         my @val;
-         
-         for my $k ( @key )
-            {
-            
-            my $v         = $line{$k};
-            $leaf->{$v} ||= {};
-            $leaf         = $leaf->{$v};
-            
-            push @val, $v;
-            
-            }
-         
-         ## remove key headers from the line   
-         delete @line{ @key };
-         
-         ## remove unwanted cols
-         if ( defined $o->{'col_grep'} )
-            {
-            %line = map { $_ => $line{$_} } @grep_headers;
-            }
-
-         ## perform the aggregation if applicable            
-         for my $key ( keys %line )
-            {
-
-            my $new_value = $line{$key};
-
-            my $on_collide = $storage_handlers{$key}{'on_collide'};
-            my $on_store   = $storage_handlers{$key}{'on_store'};
-            
-            if ( $on_store || $on_collide && exists $leaf->{$key} )
-               {
-               
-               my $handler = $on_collide || $on_store;
-
-               $new_value = $handler->(
-                  $key,                                         ## HOH_HANDLER_KEY
-                  [ map [ $key[$_] => $val[$_] ], 0 .. $#key ], ## HOH_HANDLER_KEY_VALUE_PATH
-                  $leaf->{$key},                                ## HOH_HANDLER_OLD_VALUE
-                  $new_value,                                   ## HOH_HANDLER_NEW_VALUE
-                  \%line,                                       ## HOH_HANDLER_LINE_HASH
-                  \%hoh,                                        ## HOH_HANDLER_HOH
-                  $scratch_pads{$key},                          ## HOH_HANDLER_SCRATCH_PAD
-                  );
-
-               }
-
-            $leaf->{$key} = $new_value;
-
-            }
-            
-         }
-         
-     }
-
+   if ( ! $csv->eof )
+      {
+      confess 'Error: ' . $csv->error_diag;
+      }
+   
    return \%hoh;
    }   
 
